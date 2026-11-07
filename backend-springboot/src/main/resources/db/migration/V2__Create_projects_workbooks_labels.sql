@@ -1,0 +1,2 @@
+-- UC05..UC10: Bảng projects, permission_rules, workbooks, workbook_versions, data_labels
+CREATE TABLE IF NOT EXISTS projects (id BIGSERIAL PRIMARY KEY, name VARCHAR(128) NOT NULL, description VARCHAR(500), parent_project_id BIGINT REFERENCES projects(id), depth_level INT NOT NULL DEFAULT 1, permission_template VARCHAR(32) NOT NULL, owner_id BIGINT NOT NULL REFERENCES users(id), deleted_at TIMESTAMP, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);

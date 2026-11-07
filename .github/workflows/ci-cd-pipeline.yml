@@ -1,0 +1,17 @@
+name: DAVS Monorepo CI/CD
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ main ]
+
+jobs:
+  verify-structure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Monorepo Structure
+        run: |
+          test -d backend-springboot/src/main/java/vn/edu/davs/backend
+          test -d frontend-react/src/pages

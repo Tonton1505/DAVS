@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: davs-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-davs_db}
+      POSTGRES_USER: ${POSTGRES_USER:-davs_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-davs_secret_password_2026}
+    ports:
+      - "5432:5432"
+    volumes:
+      - davs_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U davs_user -d davs_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend-springboot:
+    build:
+      context: ./backend-springboot
+      dockerfile: Dockerfile
+    container_name: davs-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-davs_db}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-davs_user}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-davs_secret_password_2026}
+      JWT_SECRET: ${JWT_SECRET:-davs_enterprise_jwt_secret_key_minimum_256_bits_2026}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend-react:
+    build:
+      context: ./frontend-react
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:8080/api/v1
+    container_name: davs-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend-springboot
+    restart: unless-stopped
+
+volumes:
+  davs_pgdata:

@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: davs-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/davs_db}
+    username: ${SPRING_DATASOURCE_USERNAME:davs_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:davs_secret_password_2026}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  port: ${SERVER_PORT:8080}

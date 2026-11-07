@@ -1,0 +1,24 @@
+// Sơ đồ Thực thể Liên kết (ERD) Hệ thống DAVS (7 Phân hệ - PostgreSQL)
+Table users {
+  id bigserial [pk]
+  email varchar(254) [unique, not null]
+  full_name varchar(100) [not null]
+  password_hash varchar(255) [not null]
+  site_role varchar(32) [not null] // SITE_ADMINISTRATOR, CREATOR, EXPLORER, VIEWER
+  status varchar(32) [not null]    // ACTIVE, PENDING_ACTIVATION, DISABLED, LOCKED
+  failed_attempts int [default: 0]
+  locked_until timestamp
+  created_at timestamp
+}
+
+Table projects {
+  id bigserial [pk]
+  name varchar(128) [not null]
+  description varchar(500)
+  parent_project_id bigint [ref: > projects.id]
+  depth_level int [not null, default: 1] // BUS-PRJ-02: Tối đa 5 cấp
+  permission_template varchar(32) [not null] // INHERIT, CUSTOM, LOCKED
+  owner_id bigint [ref: > users.id]
+  deleted_at timestamp // BUS-PRJ-05: Xóa mềm 30 ngày
+  created_at timestamp
+}
