@@ -1,4 +1,15 @@
-# Backend (Spring Boot / Maven)
+# ==============================================================================
+# GITIGNORE CHUẨN DỰ ÁN DAVS MONOREPO
+# ==============================================================================
+
+# 1. Các file không thuộc cấu trúc chuẩn dự án (tài liệu rời, nháp cũ)
+CONTRIBUTING.md
+davs-platform/
+/*.docx
+/*.pdf
+~$*.docx
+
+# 2. Backend (Spring Boot / Maven)
 backend-springboot/target/
 *.class
 *.jar
@@ -8,7 +19,7 @@ backend-springboot/target/
 mvnw
 mvnw.cmd
 
-# Frontend (React / Vite / Node)
+# 3. Frontend (React / Vite / Node)
 frontend-react/node_modules/
 frontend-react/dist/
 frontend-react/.vercel/
@@ -16,17 +27,15 @@ npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
 
-# Environment & Secrets
+# 4. Environment & Secrets
 .env
 .env.local
 .env.*.local
 
-# IDE & OS
+# 5. IDE & Hệ điều hành
 .idea/
 *.iml
-.vscode/*
-!.vscode/settings.json
+.vscode/
 .DS_Store
 Thumbs.db
-~$*.docx
-/*.docx
+*.swp
