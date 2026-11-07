@@ -1,0 +1,144 @@
+name: davs
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: davs-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-davs}
+      POSTGRES_USER: ${DB_USER:-davs}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-davs_secret_password_change_me}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - davs-net
+
+  minio:
+    image: minio/minio:latest
+    container_name: davs-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-davs_minio_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-davs_minio_secret_change_me}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - davs-net
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: davs-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-davs_minio_admin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-davs_minio_secret_change_me}
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 \"$${MINIO_ACCESS_KEY}\" \"$${MINIO_SECRET_KEY}\" &&
+      mc mb --ignore-existing local/workbooks &&
+      mc mb --ignore-existing local/datasets &&
+      mc mb --ignore-existing local/exports &&
+      mc mb --ignore-existing local/attachments &&
+      echo 'MinIO buckets (workbooks, datasets, exports, attachments) verified.'
+      "
+    networks:
+      - davs-net
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: davs-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - davs-net
+
+  backend:
+    build:
+      context: ..
+      dockerfile: infra/backend.Dockerfile
+    container_name: davs-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    environment:
+      APP_NAME: ${APP_NAME:-DAVS}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3000}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
+      DB_URL: ${DB_URL:-jdbc:postgresql://postgres:5432/davs}
+      DB_USER: ${DB_USER:-davs}
+      DB_PASSWORD: ${DB_PASSWORD:-davs_secret_password_change_me}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-davs_minio_admin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-davs_minio_secret_change_me}
+      JWT_SECRET: ${JWT_SECRET:-ZGF2cy1kZXYtand0LXNlY3JldC1rZXktbXVzdC1iZS1hdC1sZWFzdC0zMi1ieXRlcy1sb25n}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@davs.local}
+      ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-Admin@123456!ChangeMe}
+      SMTP_HOST: ${SMTP_HOST:-mailhog}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@davs.local}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    networks:
+      - davs-net
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: infra/frontend.Dockerfile
+    container_name: davs-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:80"
+    networks:
+      - davs-net
+
+volumes:
+  pgdata:
+    name: davs_pgdata
+  miniodata:
+    name: davs_miniodata
+
+networks:
+  davs-net:
+    name: davs_network
+    driver: bridge

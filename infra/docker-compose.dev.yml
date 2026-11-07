@@ -1,0 +1,16 @@
+name: davs
+
+services:
+  backend:
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+    ports:
+      - "8080:8080"
+      - "5005:5005"
+
+  mailhog:
+    restart: always
+    ports:
+      - "1025:1025"
+      - "8025:8025"

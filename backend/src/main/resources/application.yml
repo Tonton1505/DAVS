@@ -1,0 +1,99 @@
+spring:
+  application:
+    name: ${APP_NAME:DAVS}
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/davs}
+    username: ${DB_USER:davs}
+    password: ${DB_PASSWORD:davs_secret_password_change_me}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:20}
+      minimum-idle: 5
+      connection-timeout: 30000
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+
+  mail:
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PORT:1025}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+  messages:
+    basename: messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
+
+  servlet:
+    multipart:
+      max-file-size: 1024MB
+      max-request-size: 1024MB
+
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+  error:
+    include-message: always
+    include-binding-errors: never
+    include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  health:
+    mail:
+      enabled: ${MAIL_HEALTH_ENABLED:false}
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /api/v1/api-docs
+  swagger-ui:
+    enabled: true
+    path: /api/docs
+    operations-sorter: alpha
+    tags-sorter: alpha
+
+davs:
+  app-name: ${APP_NAME:DAVS}
+  base-url: ${APP_BASE_URL:http://localhost:3000}
+  minio:
+    endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+    access-key: ${MINIO_ACCESS_KEY:davs_minio_admin}
+    secret-key: ${MINIO_SECRET_KEY:davs_minio_secret_change_me}
+  security:
+    jwt-secret: ${JWT_SECRET:ZGF2cy1kZXYtand0LXNlY3JldC1rZXktbXVzdC1iZS1hdC1sZWFzdC0zMi1ieXRlcy1sb25n}
+    encryption-key: ${ENCRYPTION_KEY:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+  seed:
+    admin-email: ${ADMIN_EMAIL:admin@davs.local}
+    admin-initial-password: ${ADMIN_INITIAL_PASSWORD:Admin@123456!ChangeMe}
+  mail:
+    from: ${SMTP_FROM:noreply@davs.local}
