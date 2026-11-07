@@ -2,7 +2,10 @@
 # GITIGNORE CHUẨN DỰ ÁN DAVS MONOREPO
 # ==============================================================================
 
-# 1. Các file không thuộc cấu trúc chuẩn dự án (tài liệu rời, nháp cũ)
+# 1. Thư mục tài liệu & kịch bản đưa vào gitignore theo yêu cầu
+docs/
+documents/
+scripts/
 CONTRIBUTING.md
 davs-platform/
 /*.docx
