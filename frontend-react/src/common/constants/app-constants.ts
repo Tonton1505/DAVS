@@ -1,4 +1,10 @@
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
-export const MAX_PROJECT_DEPTH = 5;
-export const MAX_MARKS_WARNING = 100000;
-export const DEFAULT_PAGE_SIZE = 25;
+import type { Role } from "./types";
+export const ROLE_LABELS: Record<Role, string> = {
+  admin: "Quản trị viên",
+  creator: "Người sáng tạo",
+  explorer: "Người khám phá",
+  viewer: "Người xem",
+};
+export const CHART_COLORS = ["#111827", "#4B5563", "#9CA3AF", "#D1D5DB", "#E5E7EB", "#C62828"];
+export const delay = (ms = 300) => new Promise((resolve) => setTimeout(resolve, ms));
+export const formatMillions = (n: number) => `${n} triệu`;

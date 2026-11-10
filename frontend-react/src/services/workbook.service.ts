@@ -1,5 +1,6 @@
-import { apiClient } from '../lib/axios';
-
-// Service phụ trách gọi API cho module: workbook.service.ts
-export const serviceName = 'workbook.service.ts';
-export { apiClient };
+import client from "../lib/axios/client";
+import { API } from "../common/constants/api-endpoints";
+import type { DashboardItem } from "../common/constants/types";
+export const workbookService = {
+  list: async () => (await client.get<DashboardItem[]>(API.dashboards)).data,
+};

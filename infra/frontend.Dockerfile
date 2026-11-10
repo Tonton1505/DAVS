@@ -1,13 +1,13 @@
 # ============================================================================
-# Stage 1: Build React + TypeScript + Vite SPA
+# Stage 1: Build React + TypeScript + Vite SPA (from frontend-react/)
 # ============================================================================
 FROM node:20-alpine AS build
 WORKDIR /app
 
-COPY frontend/package.json frontend/package-lock.json* ./
+COPY frontend-react/package.json frontend-react/package-lock.json* ./
 RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
-COPY frontend/ ./
+COPY frontend-react/ ./
 RUN npm run build
 
 # ============================================================================

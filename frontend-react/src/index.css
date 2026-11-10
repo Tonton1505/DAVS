@@ -1,0 +1,59 @@
+@import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Be Vietnam Pro", Inter, system-ui, sans-serif;
+  --color-background: #ffffff;
+  --color-muted: #f7f7f8;
+  --color-border: #e5e7eb;
+  --color-foreground: #1f2937;
+  --color-muted-foreground: #6b7280;
+  --color-disabled: #9ca3af;
+  --color-primary: #c62828;
+  --color-primary-hover: #b71c1c;
+  --color-primary-tint: #fdecec;
+  --color-primary-border: #f3b6b6;
+  --color-ink: #111827;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-size: 14px;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+.animate-spin-slow {
+  animation: spin 1s linear infinite;
+}
+.toast-in {
+  animation: toast-in 0.2s ease-out;
+}
+.dot-grid {
+  background-image: radial-gradient(#d1d5db 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}

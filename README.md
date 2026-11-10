@@ -43,15 +43,15 @@ davs/
 │     │  ├─ integration/ connectedapp/ notification/
 │     │  └─ storage/           # lớp bao MinIO
 │     └─ resources/            # application.yml, db/migration/V*.sql, messages_vi.properties
-├─ frontend/
-│  ├─ package.json  vite.config.ts  tailwind.config.ts
+├─ frontend-react/
+│  ├─ package.json  vite.config.ts  tailwind.config.js
 │  └─ src/
-│     ├─ app/                  # router, layout, providers
-│     ├─ api/                  # client (axios), kiểu dữ liệu sinh theo hợp đồng
-│     ├─ components/           # UI dùng chung (Button, Table, Dialog, FormField, Toast…)
-│     ├─ features/             # mỗi use case/nhóm một thư mục: auth, users, groups, projects, …
-│     ├─ canvas/               # engine biểu đồ HTML5 Canvas (engine, renderers, components)
-│     ├─ store/  hooks/  i18n/  styles/
+│     ├─ common/               # constants, permission-config
+│     ├─ components/           # chart-engine, data-lineage, layout, ui
+│     ├─ pages/                # admin, creator, explorer, viewer, login
+│     ├─ services/             # API clients theo từng phân hệ
+│     ├─ stores/               # Zustand stores
+│     └─ lib/axios/            # cấu hình HTTP client
 ├─ infra/
 │  ├─ docker-compose.yml  docker-compose.dev.yml
 │  ├─ backend.Dockerfile  frontend.Dockerfile  nginx.conf
@@ -108,12 +108,10 @@ davs/
   cd backend
   mvn verify
   ```
-- **Frontend (Vitest + ESLint):**
+- **Frontend (`frontend-react/`):**
   ```bash
-  cd frontend
-  npm ci
-  npm run lint
-  npm test
+  cd frontend-react
+  npm install
   npm run build
   ```
 - **Kiểm thử tích hợp đầu-cuối (Playwright E2E):**

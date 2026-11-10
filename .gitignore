@@ -31,8 +31,14 @@ replay_pid*
 .mvn/wrapper/maven-wrapper.jar
 
 # --- Frontend (Node / Vite / React / Playwright) ---
+frontend-react/node_modules/
 frontend/node_modules/
 node_modules/
+frontend-react/dist/
+frontend-react/dist-ssr/
+frontend-react/coverage/
+frontend-react/playwright-report/
+frontend-react/test-results/
 frontend/dist/
 frontend/dist-ssr/
 frontend/coverage/

@@ -1,5 +1,4 @@
-import { apiClient } from '../lib/axios';
-
-// Service phụ trách gọi API cho module: integration.service.ts
-export const serviceName = 'integration.service.ts';
-export { apiClient };
+import client from "../lib/axios/client";
+export const integrationService = {
+  connect: async (data: unknown) => (await client.post("/integrations", data)).data,
+};

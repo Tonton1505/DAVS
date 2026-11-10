@@ -1,0 +1,11 @@
+{
+  "title": "DAVS — Hệ thống Phân tích và Trực quan hóa Dữ liệu",
+  "description": "Kết nối, làm sạch và phân tích dữ liệu bằng biểu đồ kéo thả; thiết kế dashboard để chia sẻ thông tin và cộng tác trong doanh nghiệp.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
