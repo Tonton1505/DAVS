@@ -1,8 +1,8 @@
 # Trạng thái Dự án DAVS (`statusproject.md`)
 
-> **Cập nhật lần cuối:** 2026-11-07
+> **Cập nhật lần cuối:** 2026-11-11
 > **Giai đoạn hiện tại:** P0 – Nền tảng (`T-001` → `T-015`)
-> **Tiến độ P0:** Hoàn thành `4 / 15` task (`T-001`, `T-002`, `T-003`, `T-004`)
+> **Tiến độ P0:** Hoàn thành `8 / 15` task (`T-001`, `T-002`, `T-003`, `T-004`, `T-009`, `T-010`, `T-011`, `T-012`)
 
 ---
 
@@ -30,6 +30,43 @@
   - [`GlobalExceptionHandler.java`](./backend/src/main/java/com/davs/common/error/GlobalExceptionHandler.java): Xử lý tập trung `DavsException`, `MethodArgumentNotValidException` / `BindException`, `ConstraintViolationException`, `MaxUploadSizeExceededException` (`ERR-PRJ-05`), `AccessDeniedException` (`ERR-PRJ-03`), `AuthenticationException` (`ERR-AUTH-05`), và mọi ngoại lệ chưa biết (`ERR-SYS-01` kèm `traceId`, ẩn toàn bộ stack trace và chi tiết nhạy cảm).
 - **Kiểm thử (`ErrorHandlingTests.java`):**
   - [`ErrorHandlingTests.java`](./backend/src/test/java/com/davs/common/error/ErrorHandlingTests.java): **50/50 test chạy xanh** (46 test tham số hóa cho từng `ErrorCode` + kiểm tra đồng bộ `messages_vi.properties` + kiểm tra mẫu hợp đồng mục 7 `ERR-USR-02` + kiểm tra Jakarta Validation `fieldErrors` + kiểm tra lỗi hệ thống `ERR-SYS-01` không lộ stack trace).
+
+### `[x]` T-009 · Lớp lưu trữ MinIO
+- Triển khai `com.davs.storage`:
+  - [`Bucket.java`](./backend/src/main/java/com/davs/storage/Bucket.java): 4 bucket chuẩn (`workbooks`, `datasets`, `exports`, `attachments`).
+  - [`StorageService.java`](./backend/src/main/java/com/davs/storage/StorageService.java): Wrapper MinIO client với đầy đủ chức năng `put`, `get`, `delete`, `exists`, `presignGet`, tự động khởi tạo bucket nếu thiếu.
+  - Làm sạch tên tệp chống Path Traversal (`../../x` → `x`).
+  - Kiểm tra Magic Bytes và định dạng tệp: `.twb` (XML), `.twbx` (ZIP), dataset `.csv`, `.xlsx`, `.parquet` (`ERR-PRJ-04`, `ERR-DAT-04`).
+  - Giới hạn dung lượng tải lên theo cấu hình `upload.maxBytes` từ `SettingsService` (`ERR-PRJ-05`).
+  - Giao diện [`VirusScanner.java`](./backend/src/main/java/com/davs/storage/VirusScanner.java) và cài đặt [`NoopScanner.java`](./backend/src/main/java/com/davs/storage/NoopScanner.java) phát hiện chữ ký độc hại EICAR (`ERR-PRJ-08`).
+  - **Kiểm thử (`StorageServiceTests.java`):** 8/8 test chạy xanh.
+
+### `[x]` T-010 · Công việc nền và email
+- Triển khai `com.davs.common.job`:
+  - [`JobType.java`](./backend/src/main/java/com/davs/common/job/JobType.java), [`JobStatus.java`](./backend/src/main/java/com/davs/common/job/JobStatus.java), [`JobEntity.java`](./backend/src/main/java/com/davs/common/job/JobEntity.java).
+  - [`JobRepository.java`](./backend/src/main/java/com/davs/common/job/JobRepository.java): Khóa tác vụ an toàn bằng `FOR UPDATE SKIP LOCKED`.
+  - [`JobRunner.java`](./backend/src/main/java/com/davs/common/job/JobRunner.java): Quét và chạy job, kiểm tra giới hạn đồng thời `refresh.maxConcurrent`, cơ chế retry tối đa 3 lần với backoff lũy thừa rồi chuyển `FAILED`.
+- Triển khai `com.davs.notification`:
+  - [`EmailTemplate.java`](./backend/src/main/java/com/davs/notification/EmailTemplate.java): 5 mẫu email chuẩn (thư mời, cảnh báo làm mới thất bại, chia sẻ, @nhắc, kết quả nhập người dùng).
+  - [`NotificationService.java`](./backend/src/main/java/com/davs/notification/NotificationService.java): Gửi email qua `JavaMailSender` (tương thích MailHog khi dev).
+  - **Kiểm thử (`JobAndNotificationTests.java`):** 3/3 test chạy xanh.
+
+### `[x]` T-011 · Dữ liệu khởi tạo (seed)
+- Flyway Migration [`V2__seed_initial_data.sql`](./backend/src/main/resources/db/migration/V2__seed_initial_data.sql):
+  - Tạo bảng `license_pools`, `groups`, `group_members`, `projects`.
+  - Seed mặc định cấu hình `system_settings`, hạn mức `license_pools`, nhóm hệ thống `"All Users"`, dự án gốc `"Default"`.
+- [`DataSeeder.java`](./backend/src/main/java/com/davs/common/seed/DataSeeder.java):
+  - Khởi tạo tài khoản quản trị đầu tiên (`SITE_ADMIN`) từ biến môi trường `ADMIN_EMAIL` / `ADMIN_INITIAL_PASSWORD` với cờ `must_change_password = true`.
+  - Băm mật khẩu bằng BCrypt, đảm bảo tính idempotent (chạy lại không trùng, không ghi đè), không log mật khẩu.
+  - **Kiểm thử (`SeedDataTests.java`):** 2/2 test chạy xanh.
+
+### `[x]` T-012 · Khung frontend
+- Ứng dụng React 18 + TypeScript trong `frontend-react/` với giao diện Figma hoàn chỉnh:
+  - Axios HTTP client với interceptor đính kèm Bearer token và chuyển hướng `ERR-AUTH-05` về `/login`.
+  - Helper [`applyApiError.ts`](./frontend-react/src/lib/error/applyApiError.ts) gán `fieldErrors` vào form.
+  - Hệ thống route bảo vệ, layout thanh trên/thanh bên thu gọn theo vai trò.
+  - Trang demo kiểm thử thành phần UI [`/dev/components`](./frontend-react/src/pages/dev/ComponentDemoPage.tsx).
+  - Build production thành công sạch sẽ với Vite (`npm run build`).
 
 ---
 

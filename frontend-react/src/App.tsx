@@ -32,6 +32,7 @@ import UsersPage from "./pages/admin/UsersPage";
 import AddUsersPage from "./pages/admin/AddUsersPage";
 import GroupsPage from "./pages/admin/GroupsPage";
 import SettingsPage from "./pages/admin/SettingsPage";
+import ComponentDemoPage from "./pages/dev/ComponentDemoPage";
 
 function Guard() {
   const role = useAuthStore((s) => s.role),
@@ -90,6 +91,7 @@ const router = createBrowserRouter([
           { path: "admin/users/add", Component: AddUsersPage },
           { path: "admin/groups", Component: GroupsPage },
           { path: "admin/settings", Component: SettingsPage },
+          { path: "dev/components", Component: ComponentDemoPage },
           { path: "403", element: <ErrorPage code="403" /> },
           { path: "404", element: <ErrorPage code="404" /> },
           { path: "*", element: <ErrorPage code="404" /> },

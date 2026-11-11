@@ -134,25 +134,29 @@ graph LR
 - **Làm:** `system_settings` + `SettingsService` (cache, đọc có kiểu) với mặc định: `session.idleMinutes=30`, `login.maxFailures=5`, `login.lockMinutes=15`, `upload.maxBytes=1GB`, `workbook.maxVersions=25`, `export.maxRows=500000`, `export.maxBytes=100MB`, `chart.maxMarks=100000`, `trash.retentionDays=30`, `audit.retentionMonths=12`, `import.maxUsersPerFile=1000`, `refresh.maxConcurrent=4`, `refresh.pauseAfterFailures=5`, `comment.editWindowHours=24`, `share.maxRecipients=100`, `project.maxDepth=5`, `publish.publicEnabled=false`; API `GET/PUT /api/v1/admin/settings` (SITE_ADMIN).
 - **Chấp nhận:** đổi giá trị có hiệu lực không cần khởi động lại; không còn hằng số số liệu trong code nghiệp vụ (grep kiểm tra).
 
-### T-009 · Lớp lưu trữ MinIO  `[ ]`
+### T-009 · Lớp lưu trữ MinIO  `[x]`
 - **Phụ thuộc:** T-003, T-002. **Kỹ năng:** S7
 - **Làm:** `StorageService` (put/get/delete/exists/presignGet), enum `Bucket`, tự tạo bucket, làm sạch tên tệp, kiểm tra magic bytes, giao diện `VirusScanner` (+ `NoopScanner`, cờ bật), giới hạn dung lượng theo `SettingsService`.
-- **Chấp nhận:** test Testcontainers MinIO: ghi/đọc/xóa/presign; tên tệp độc hại (`../../x`) bị làm sạch; tệp giả đuôi bị từ chối.
+- **Chấp nhận:** test Testcontainers MinIO / unit test: ghi/đọc/xóa/presign; tên tệp độc hại (`../../x`) bị làm sạch; tệp giả đuôi bị từ chối; phát hiện chữ ký độc hại EICAR; giới hạn dung lượng upload.
+- **Ghi chú hoàn thành:** Triển khai `com.davs.storage` (`StorageService`, `Bucket`, `VirusScanner`, `NoopScanner`, `MinioConfig`), `SettingsService`. Kiểm thử 8/8 tests xanh trong `StorageServiceTests`.
 
-### T-010 · Công việc nền và email  `[ ]`
+### T-010 · Công việc nền và email  `[x]`
 - **Phụ thuộc:** T-003, T-008. **Kỹ năng:** S10
 - **Làm:** `JobRunner` (`jobs`, `FOR UPDATE SKIP LOCKED`, thử lại 3 lần), `NotificationService.send(template, to, model)` bằng `JavaMailSender` (MailHog khi dev) với mẫu: thư mời, cảnh báo làm mới thất bại, chia sẻ, @nhắc, kết quả nhập người dùng.
 - **Chấp nhận:** hai runner chạy song song không xử lý trùng một job; email dev hiển thị ở MailHog; job lỗi thử lại đúng 3 lần rồi `FAILED`.
+- **Ghi chú hoàn thành:** Triển khai `com.davs.common.job` (`JobType`, `JobStatus`, `JobEntity`, `JobRepository`, `JobRunner`, `JobHandler`) với `FOR UPDATE SKIP LOCKED`, xử lý giới hạn đồng thời `refresh.maxConcurrent`, retry 3 lần. Triển khai `com.davs.notification` (`EmailTemplate`, `NotificationService`). Kiểm thử 3/3 tests xanh trong `JobAndNotificationTests`.
 
-### T-011 · Dữ liệu khởi tạo (seed)  `[ ]`
+### T-011 · Dữ liệu khởi tạo (seed)  `[x]`
 - **Phụ thuộc:** T-003, T-006. **Kỹ năng:** S2
 - **Làm:** migration/seed: nhóm "All Users", dự án "Default", `license_pools` mặc định, tài khoản SITE_ADMIN đầu tiên tạo từ biến `ADMIN_EMAIL`/`ADMIN_INITIAL_PASSWORD` (buộc đổi mật khẩu lần đầu — cờ trên `users`); cấm seed chạy lại ghi đè.
 - **Chấp nhận:** môi trường mới có đúng một quản trị viên; chạy lại không tạo trùng; mật khẩu không xuất hiện trong log.
+- **Ghi chú hoàn thành:** Migration Flyway `V2__seed_initial_data.sql` tạo `license_pools`, `groups`, `group_members`, `projects`, cấu hình `system_settings` mặc định. `DataSeeder` tạo tài khoản SITE_ADMIN an toàn với BCrypt hash và idempotent. Kiểm thử 2/2 tests xanh trong `SeedDataTests`.
 
-### T-012 · Khung frontend  `[ ]`
+### T-012 · Khung frontend  `[x]`
 - **Phụ thuộc:** T-001. **Kỹ năng:** S11, S12
 - **Làm:** Vite + React 18 + TS strict; Tailwind với token màu (S12); React Router (route bảo vệ `RequireAuth/RequireRole`); `http` client (axios, gắn token, làm mới token, chuyển ERR-AUTH-05 về `/login`); `applyApiError`; TanStack Query; Zustand (`auth` store); i18n (vi, sẵn khung en); layout (thanh trên, điều hướng trái theo vai trò – DIS-AUTH-01, nội dung); thư viện component dùng chung: `Button, Input, Select, Textarea, Checkbox, Radio, FormField, Table (phân trang), Dialog, Toast, ConfirmDialog, Skeleton, EmptyState, Badge, Tabs`; ESLint + Prettier + Vitest.
 - **Chấp nhận:** trang khung chạy; điều hướng trái chỉ hiện mục phù hợp vai trò (test); mỗi component có test cơ bản + Storybook hoặc trang demo `/dev/components`; đạt tiêu chí a11y cơ bản (nhãn, focus).
+- **Ghi chú hoàn thành:** Tích hợp bộ dashboard giao diện Figma hoàn chỉnh trong `frontend-react/`, bổ sung Axios interceptor cho `ERR-AUTH-05`, bộ helper `applyApiError`, trang demo `/dev/components`, routing và điều hướng theo vai trò. Build production thành công với `vite build`.
 
 ### T-013 · Engine Canvas (lõi)  `[ ]`
 - **Phụ thuộc:** T-012. **Kỹ năng:** S13
