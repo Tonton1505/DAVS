@@ -1145,7 +1145,7 @@ graph LR
 
 **Phi chức năng:** NFR-PERF-05.
 
-### T-UC13-BE · Backend Mô hình hóa dữ liệu  `[ ]`
+### T-UC13-BE · Backend Mô hình hóa dữ liệu  `[x]`
 
 - **Phụ thuộc:** T-UC11-BE
 - **API:**
@@ -1222,7 +1222,7 @@ graph LR
 
 **Phi chức năng:** NFR-PERF-09; NFR-PERF-11.
 
-### T-UC14-BE · Backend Quản lý nguồn dữ liệu và làm mới extract  `[ ]`
+### T-UC14-BE · Backend Quản lý nguồn dữ liệu và làm mới extract  `[x]`
 
 - **Phụ thuộc:** T-UC11-BE, T-010
 - **API:**
@@ -1303,7 +1303,7 @@ graph LR
 
 **Phi chức năng:** NFR-PERF-05 (vẽ lại ≤ 3 giây với ≤ 100.000 marks).
 
-### T-UC15-BE · Backend Xây dựng biểu đồ  `[ ]`
+### T-UC15-BE · Backend Xây dựng biểu đồ  `[x]`
 
 - **Phụ thuộc:** T-UC13-BE, T-013
 - **API:**

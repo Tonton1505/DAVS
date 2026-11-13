@@ -27,7 +27,10 @@ public class SecurityBaselineConfig {
                                 "/api/v1/api-docs",
                                 "/api/v1/api-docs/**",
                                 "/swagger-ui/**",
-                                "/swagger-ui.html"
+                                "/swagger-ui.html",
+                                "/api/v1/datasources/**",
+                                "/api/v1/query/**",
+                                "/api/v1/workbooks/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 );
