@@ -13,7 +13,7 @@ export default function ProjectCreateDialog({
     [error, setError] = useState(""),
     toast = useUIStore((s) => s.toast);
   const save = () => {
-    if (!name || /[\/\\:*?"<>|]/.test(name) || name.length > 128) {
+    if (!name || /[/\\:*?"<>|]/.test(name) || name.length > 128) {
       setError(MESSAGES.projectName);
       return;
     }

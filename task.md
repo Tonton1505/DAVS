@@ -224,7 +224,7 @@ graph LR
 
 **Phi chức năng:** NFR-PERF-01 (đăng nhập ≤ 3 giây); NFR-SEC-01, NFR-SEC-02, NFR-SEC-07.
 
-### T-UC01-BE · Backend Đăng nhập hệ thống  `[ ]`
+### T-UC01-BE · Backend Đăng nhập hệ thống  `[x]`
 
 - **Phụ thuộc:** T-003, T-004, T-005, T-006, T-008, T-011
 - **API:**
@@ -240,9 +240,9 @@ graph LR
 - **Kiểm thử gợi ý (từ SRS):** Đúng/sai mật khẩu; sai 5 lần liên tiếp → khóa 15 phút; lần đầu không tích điều khoản; phiên hết hạn sau 30 phút; tài khoản bị vô hiệu hóa.
 - **Kỹ năng cần dùng:** S2, S3, S4, S5, S6
 
-**Ghi chú hoàn thành** (agent điền khi xong): …
+**Ghi chú hoàn thành** (agent điền khi xong): Đã tạo Flyway `V6__auth_login_attempts_and_refresh_tokens.sql`, hoàn thiện `com.davs.auth` (`/login`, `/accept-terms`, `/refresh`, `/logout`, `/me`), BCrypt constant-time, khóa 15 phút sau 5 lần sai theo `(email, ip)`, `ERR-AUTH-01..05`, audit log và `AuthIntegrationTests` (4/4 pass; toàn bộ `mvn -B verify` 122/122 pass).
 
-### T-UC01-FE · Giao diện Đăng nhập hệ thống  `[ ]`
+### T-UC01-FE · Giao diện Đăng nhập hệ thống  `[x]`
 
 - **Phụ thuộc:** T-UC01-BE (có thể làm song song bằng dữ liệu giả theo hợp đồng API), T-012
 - **Route / vị trí:** `/login`
@@ -252,7 +252,7 @@ graph LR
 - **Test:** Vitest cho form/hook; Playwright cho luồng chính + các lỗi quan trọng (UC01_<bước>_<mô-tả>).
 - **Kỹ năng cần dùng:** S11, S12
 
-**Ghi chú hoàn thành** (agent điền khi xong): …
+**Ghi chú hoàn thành** (agent điền khi xong): Đã nối `authApi` (`/api/v1/auth/*`), `LoginPage.tsx` (VAL-AUTH-01..02, `rememberMe`, hộp thoại kích hoạt điều khoản lần đầu, `ERR-AUTH-01..05`), `LoginPage.test.tsx` (Vitest 23/23 pass) và `uc01-login.spec.ts` (Playwright E2E 3/3 pass trên Docker Compose).
 
 ---
 
@@ -302,7 +302,7 @@ graph LR
 
 **Phi chức năng:** NFR-PERF-06 (nhập 1.000 người dùng ≤ 60 giây); NFR-SEC-03; NFR-SEC-05.
 
-### T-UC02-BE · Backend Thêm người dùng  `[ ]`
+### T-UC02-BE · Backend Thêm người dùng  `[x]`
 
 - **Phụ thuộc:** T-UC01-BE, T-010
 - **API:**
@@ -318,9 +318,9 @@ graph LR
 - **Kiểm thử gợi ý (từ SRS):** Thêm 1 và nhiều tên; CSV 1.000 dòng và 1.001 dòng; tài khoản trùng; vượt giấy phép; email sai định dạng; thư mời gửi lỗi.
 - **Kỹ năng cần dùng:** S2, S3, S4, S5, S6, S10
 
-**Ghi chú hoàn thành** (agent điền khi xong): …
+**Ghi chú hoàn thành** (agent điền khi xong): Đã tạo Flyway `V7__user_invitations_and_import_reports.sql`, hoàn thiện `com.davs.user` (`POST /api/v1/users`, `POST /api/v1/users/import`, `GET /import/{jobId}`, `GET /import/{jobId}/errors`, `GET /import-template`, `GET /licenses`), `ImportUsersJobHandler` (`IMPORT_USERS`), kiểm tra license `BUS-USR-01`, giới hạn 1.000 dòng `BUS-USR-03`, `ERR-USR-01..04`, đánh dấu `UNINVITED` khi gửi mail lỗi `[7a]`, và `UserCreationIntegrationTests` (4/4 pass; toàn bộ `mvn -B verify` 126/126 pass).
 
-### T-UC02-FE · Giao diện Thêm người dùng  `[ ]`
+### T-UC02-FE · Giao diện Thêm người dùng  `[x]`
 
 - **Phụ thuộc:** T-UC02-BE (có thể làm song song bằng dữ liệu giả theo hợp đồng API), T-012
 - **Route / vị trí:** `/admin/users/new`
@@ -330,7 +330,7 @@ graph LR
 - **Test:** Vitest cho form/hook; Playwright cho luồng chính + các lỗi quan trọng (UC02_<bước>_<mô-tả>).
 - **Kỹ năng cần dùng:** S11, S12
 
-**Ghi chú hoàn thành** (agent điền khi xong): …
+**Ghi chú hoàn thành** (agent điền khi xong): Đã nối `userService` (`/api/v1/users/*`), hoàn thiện `AddUsersPage.tsx` (hỗ trợ cả `/admin/users/new` và `/admin/users/add`, nhập từng tên ngăn cách `;`/xuống dòng, nhập CSV với progress & tải tệp mẫu/báo cáo lỗi, hiển thị license còn lại và `ERR-USR-01..04`), `AddUsersPage.test.tsx` (Vitest 26/26 pass) và `uc02-add-users.spec.ts` (Playwright E2E 4/4 pass trên Docker Compose).
 
 ---
 
@@ -531,7 +531,7 @@ graph LR
 
 **Phi chức năng:** NFR-PERF-04; NFR-SEC-03.
 
-### T-UC05-BE · Backend Tạo dự án  `[ ]`
+### T-UC05-BE · Backend Tạo dự án  `[x]`
 
 - **Phụ thuộc:** T-UC01-BE, T-006
 - **API:**
@@ -544,9 +544,9 @@ graph LR
 - **Kiểm thử gợi ý (từ SRS):** Tên 1, 128, 129 ký tự; ký tự cấm; tên trùng; lồng 5 và 6 cấp; người dùng không có quyền.
 - **Kỹ năng cần dùng:** S2, S3, S4, S5, S6
 
-**Ghi chú hoàn thành** (agent điền khi xong): …
+**Ghi chú hoàn thành** (agent điền khi xong): Đã tạo migration `V8__projects_uc05_constraints.sql`, `CreateProjectRequest`, `ProjectDto`, `JdbcProjectRepository`, `ProjectService`, `ProjectController` (`GET/POST /api/v1/projects`, `GET /api/v1/projects/{id}`), kiểm tra tên 1–128 ký tự và ký tự cấm (`ERR-PRJ-02`), trùng tên cùng cấp (`ERR-PRJ-01`), độ sâu tối đa 5 (`BUS-PRJ-02`), kế thừa quyền cha (`BUS-PRJ-03`), phân quyền `SITE_ADMIN`/`CREATOR` (`ERR-PRJ-03`), audit `PROJECT_CREATE`, và `ProjectCreationIntegrationTests` (3/3). `mvn -B verify` đạt 129/129 test, 0 Checkstyle/Spotless.
 
-### T-UC05-FE · Giao diện Tạo dự án  `[ ]`
+### T-UC05-FE · Giao diện Tạo dự án  `[x]`
 
 - **Phụ thuộc:** T-UC05-BE (có thể làm song song bằng dữ liệu giả theo hợp đồng API), T-012
 - **Route / vị trí:** `/projects/new`
@@ -556,7 +556,7 @@ graph LR
 - **Test:** Vitest cho form/hook; Playwright cho luồng chính + các lỗi quan trọng (UC05_<bước>_<mô-tả>).
 - **Kỹ năng cần dùng:** S11, S12
 
-**Ghi chú hoàn thành** (agent điền khi xong): …
+**Ghi chú hoàn thành** (agent điền khi xong): Đã tạo `projectService` (`/v1/projects`), `CreateProjectPage.tsx` (`/projects/new`), đăng ký route trong `App.tsx`, `CreateProjectPage.test.tsx` (3/3) và `e2e/uc05-create-project.spec.ts`. Toàn bộ `eslint .` (0 errors), `tsc --noEmit`, `vitest run` (29/29), `vite build`, và Playwright E2E (5/5) đều pass.
 
 ---
 
@@ -689,7 +689,7 @@ graph LR
 
 **Phi chức năng:** NFR-SEC-03; NFR-SEC-05.
 
-### T-UC07-BE · Backend Thiết lập quyền truy cập  `[ ]`
+### T-UC07-BE · Backend Thiết lập quyền truy cập  `[x]`
 
 - **Phụ thuộc:** T-UC05-BE, T-UC04-BE, T-006
 - **API:**
@@ -704,9 +704,9 @@ graph LR
 - **Kiểm thử gợi ý (từ SRS):** Allow/Deny xung đột; quyền vượt vai trò site; xem quyền hiệu lực của người dùng thuộc nhiều nhóm; dự án khóa quyền; người không có quyền Đổi quyền.
 - **Kỹ năng cần dùng:** S2, S3, S4, S5, S6
 
-**Ghi chú hoàn thành** (agent điền khi xong): …
+**Ghi chú hoàn thành** (agent điền khi xong): Đã tạo `ProjectResourceMetadataResolver`, `JdbcResourcePermissionRepository`, `ResourcePermissionService`, `ResourcePermissionsController` (`GET/PUT /api/v1/resources/{type}/{id}/permissions`, `GET .../effective`, `GET .../subjects`, `GET /api/v1/permission-templates`), cập nhật `GlobalExceptionHandler` xử lý `ResponseStatusException` (409 `DIS-PRJ-03`), áp dụng `BUS-PRJ-07` (DENY ưu tiên hơn ALLOW), `BUS-PRJ-08` (cảnh báo vượt vai trò nhưng vẫn lưu), `DIS-PRJ-03` (409 khi dự án cha `LOCKED`), `ERR-PRJ-03` (403), ghi audit `PERMISSION_UPDATE` (`before`/`after`), và `ResourcePermissionsIntegrationTests` (5/5). `mvn -B verify` đạt 134/134 test, 0 Checkstyle/Spotless.
 
-### T-UC07-FE · Giao diện Thiết lập quyền truy cập  `[ ]`
+### T-UC07-FE · Giao diện Thiết lập quyền truy cập  `[x]`
 
 - **Phụ thuộc:** T-UC07-BE (có thể làm song song bằng dữ liệu giả theo hợp đồng API), T-012
 - **Route / vị trí:** `(hộp thoại trên /projects và trang workbook)`
@@ -716,7 +716,7 @@ graph LR
 - **Test:** Vitest cho form/hook; Playwright cho luồng chính + các lỗi quan trọng (UC07_<bước>_<mô-tả>).
 - **Kỹ năng cần dùng:** S11, S12
 
-**Ghi chú hoàn thành** (agent điền khi xong): …
+**Ghi chú hoàn thành** (agent điền khi xong): Đã tạo `permissionService`, `PermissionsDialog` / `PermissionsPanelBody`, `PermissionRuleRow`, `TemplatePicker`, `EffectivePermissionsPanel`, cập nhật `ProjectPermissionsPage.tsx` và `ProjectsPage.tsx` (kết nối dữ liệu thật + nút "Quyền"), `PermissionsDialog.test.tsx` (3/3), và `e2e/uc07-permissions.spec.ts`. Toàn bộ `eslint .` (0 errors), `tsc --noEmit`, `vitest run` (32/32), `vite build`, và Playwright E2E (6/6) đều pass.
 
 ---
 

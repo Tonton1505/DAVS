@@ -20,6 +20,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Centralized exception translator converting domain, validation, security, and unexpected
@@ -163,6 +164,20 @@ public class GlobalExceptionHandler {
                 traceId
         );
         return ResponseEntity.status(ErrorCode.ERR_AUTH_05.getHttpStatus()).body(body);
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ApiErrorResponse> handleResponseStatusException(
+            ResponseStatusException ex,
+            HttpServletRequest request
+    ) {
+        String traceId = resolveTraceId(request);
+        String code = ex.getStatusCode().value() == HttpStatus.CONFLICT.value()
+                ? "DIS-PRJ-03"
+                : "ERR-HTTP-" + ex.getStatusCode().value();
+        String message = ex.getReason() != null ? ex.getReason() : ex.getMessage();
+        ApiErrorResponse body = new ApiErrorResponse(code, message, List.of(), traceId);
+        return ResponseEntity.status(ex.getStatusCode()).body(body);
     }
 
     @ExceptionHandler(Exception.class)

@@ -1,9 +1,7 @@
 import { useState } from "react";
 import {
-  BarChart3,
   Copy,
   GripVertical,
-  LayoutDashboard,
   Monitor,
   Redo2,
   Save,
@@ -14,15 +12,13 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { Button, Input, Label, PageHeader, Select, Textarea } from "../../components/ui";
-import { useUIStore } from "../../stores/ui.store";
 import ActionsDrawer from "./ActionsDrawer";
 const sheets = ["Doanh số theo tháng", "Doanh số theo vùng", "Top sản phẩm", "Cơ cấu kênh"];
 export default function DashboardDesignerPage() {
   const nav = useNavigate(),
     [placed, setPlaced] = useState<string[]>(sheets),
     [drawer, setDrawer] = useState(false),
-    [device, setDevice] = useState("desktop"),
-    toast = useUIStore((s) => s.toast);
+    [device, setDevice] = useState("desktop");
   const drop = (e: React.DragEvent) => {
     e.preventDefault();
     const x = e.dataTransfer.getData("sheet");

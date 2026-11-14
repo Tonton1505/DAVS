@@ -83,7 +83,7 @@ export default function PublishWorkbookPage() {
           </div>
           <section>
             <div className="mb-3 font-semibold">Sheet hiển thị</div>
-            {["Tất cả", "Doanh số theo tháng", "Top sản phẩm", "Cơ cấu kênh"].map((x, i) => (
+            {["Tất cả", "Doanh số theo tháng", "Top sản phẩm", "Cơ cấu kênh"].map((x) => (
               <label key={x} className="mr-5">
                 <input type="checkbox" defaultChecked className="mr-2 accent-primary" />
                 {x}

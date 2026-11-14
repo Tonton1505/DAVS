@@ -10,7 +10,7 @@ import {
   Server,
 } from "lucide-react";
 import { useNavigate } from "react-router";
-import { Alert, Button, Card, Input, Label, PageHeader, Select } from "../../components/ui";
+import { Alert, Button, Card, Input, Label, PageHeader } from "../../components/ui";
 import { MESSAGES } from "../../common/constants/messages";
 const types = [
   ["Excel", FileSpreadsheet],

@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import {
-  BarChart3,
   Download,
   Edit3,
   MessageSquare,
@@ -16,9 +15,6 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  Legend,
-  Line,
-  LineChart,
   Pie,
   PieChart,
   ResponsiveContainer,

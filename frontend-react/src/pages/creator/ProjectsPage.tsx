@@ -1,35 +1,47 @@
 import { useEffect, useState } from "react";
-import { Folder, Grid2X2, List, MoreHorizontal, Plus, Search, Share2 } from "lucide-react";
+import { Folder, Grid2X2, List, Plus, Search, Shield } from "lucide-react";
 import { useNavigate } from "react-router";
 import { Button, Card, Input, PageHeader, Select } from "../../components/ui";
-import { useProjectStore } from "../../stores/project.store";
 import { useAuthStore } from "../../stores/auth.store";
-import ProjectCreateDialog from "./ProjectCreateDialog";
-const content = [
-  { name: "Báo cáo bán hàng Q4", type: "project", owner: "Nguyễn Văn An", date: "31/10/2026" },
-  { name: "Báo cáo tài chính", type: "project", owner: "Lê Thu Hà", date: "29/10/2026" },
-  { name: "Tổng quan kinh doanh", type: "workbook", owner: "Nguyễn Văn An", date: "Hôm qua" },
-  { name: "Doanh số_2026", type: "source", owner: "Nguyễn Văn An", date: "Hôm nay" },
-  { name: "Sandbox cá nhân", type: "project", owner: "Bạn", date: "25/10/2026" },
-];
+import { projectService, type ProjectDto } from "../../services/project.service";
+import { PermissionsDialog } from "../../components/permissions/PermissionsDialog";
+
 export default function ProjectsPage() {
-  const nav = useNavigate(),
-    role = useAuthStore((s) => s.role),
-    { load } = useProjectStore(),
-    [open, setOpen] = useState(false),
-    [q, setQ] = useState(""),
-    [grid, setGrid] = useState(true);
+  const nav = useNavigate();
+  const role = useAuthStore((s) => s.role);
+  const [projects, setProjects] = useState<ProjectDto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
+  const [grid, setGrid] = useState(true);
+  const [permProjectId, setPermProjectId] = useState<string | null>(null);
+
   useEffect(() => {
-    load();
-  }, [load]);
-  const items = content.filter((x) => x.name.toLowerCase().includes(q.toLowerCase()));
+    let cancelled = false;
+    projectService
+      .list()
+      .then((data) => {
+        if (!cancelled) setProjects(data);
+      })
+      .catch(() => {
+        if (!cancelled) setProjects([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const items = projects.filter((x) => x.name.toLowerCase().includes(q.toLowerCase()));
+
   return (
     <>
       <PageHeader
         title="Dự án"
         actions={
           role === "creator" || role === "admin" ? (
-            <Button variant="primary" onClick={() => setOpen(true)}>
+            <Button variant="primary" onClick={() => nav("/projects/new")}>
               <Plus className="size-4" />
               Tạo dự án
             </Button>
@@ -56,35 +68,62 @@ export default function ProjectsPage() {
           {grid ? "Danh sách" : "Lưới"}
         </Button>
       </div>
-      <div className={grid ? "grid gap-4 md:grid-cols-2 xl:grid-cols-3" : "space-y-2"}>
-        {items.map((x) => (
-          <button
-            key={x.name}
-            onClick={() => x.type === "workbook" && nav("/dashboards/tong-quan")}
-            className={`group text-left ${grid ? "rounded-xl border bg-white p-5" : "flex w-full items-center rounded-lg border bg-white px-4 py-3"}`}
-          >
-            <div className="flex w-full items-start gap-3">
-              <span className="rounded-lg bg-muted p-3">
-                <Folder className="size-5" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="font-semibold">{x.name}</div>
-                <div className="mt-1 text-xs text-muted-foreground">
-                  {x.owner} · {x.date}
-                </div>
-                <div className="mt-3 flex gap-1">
-                  <span className="rounded bg-muted px-2 py-1 text-[10px]">Bảo mật nội bộ</span>
-                </div>
-              </div>
-              <MoreHorizontal className="size-4 text-muted-foreground" />
-            </div>
-          </button>
-        ))}
-      </div>
-      {items.length === 0 && (
+
+      {loading ? (
+        <Card className="text-center text-sm text-muted-foreground">Đang tải danh sách dự án…</Card>
+      ) : items.length === 0 ? (
         <Card className="text-center text-muted-foreground">Không có kết quả phù hợp.</Card>
+      ) : (
+        <div className={grid ? "grid gap-4 md:grid-cols-2 xl:grid-cols-3" : "space-y-2"}>
+          {items.map((p) => (
+            <div
+              key={p.id}
+              className={`group text-left ${grid ? "rounded-xl border bg-white p-5" : "flex w-full items-center justify-between rounded-lg border bg-white px-4 py-3"}`}
+            >
+              <div className="flex w-full items-start gap-3">
+                <span className="rounded-lg bg-muted p-3">
+                  <Folder className="size-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-ink">{p.name}</div>
+                  {p.description && (
+                    <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {p.description}
+                    </div>
+                  )}
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <span className="rounded bg-muted px-2 py-0.5 text-[10px]">
+                      {p.permissionMode}
+                    </span>
+                    {p.isDefault && (
+                      <span className="rounded bg-primary-tint px-2 py-0.5 text-[10px] text-primary">
+                        Mặc định
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  aria-label={`Thêm quyền cho ${p.name}`}
+                  onClick={() => setPermProjectId(p.id)}
+                >
+                  <Shield className="size-3.5" />
+                  Quyền
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
-      <ProjectCreateDialog open={open} onOpenChange={setOpen} />
+
+      <PermissionsDialog
+        open={permProjectId !== null}
+        resourceType="project"
+        resourceId={permProjectId}
+        onOpenChange={(open) => {
+          if (!open) setPermProjectId(null);
+        }}
+      />
     </>
   );
 }

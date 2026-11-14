@@ -17,6 +17,7 @@ import DashboardViewPage from "./pages/viewer/DashboardViewPage";
 import ExplorePage from "./pages/explorer/ExplorePage";
 import AdHocAnalysisPage from "./pages/explorer/AdHocAnalysisPage";
 import ProjectsPage from "./pages/creator/ProjectsPage";
+import CreateProjectPage from "./pages/creator/projects/CreateProjectPage";
 import ProjectPermissionsPage from "./pages/creator/ProjectPermissionsPage";
 import WorkbookUploadPage from "./pages/creator/WorkbookUploadPage";
 import LabelsPage from "./pages/creator/LabelsPage";
@@ -32,6 +33,8 @@ import UsersPage from "./pages/admin/UsersPage";
 import AddUsersPage from "./pages/admin/AddUsersPage";
 import GroupsPage from "./pages/admin/GroupsPage";
 import SettingsPage from "./pages/admin/SettingsPage";
+import CanvasDemoPage from "./pages/dev/CanvasDemoPage";
+import ComponentsDemoPage from "./pages/dev/ComponentsDemoPage";
 
 function Guard() {
   const role = useAuthStore((s) => s.role),
@@ -63,6 +66,8 @@ function ErrorPage({ code }: { code: "403" | "404" }) {
 
 const router = createBrowserRouter([
   { path: "/login", Component: LoginPage },
+  { path: "/dev/components", Component: ComponentsDemoPage },
+  { path: "/dev/canvas", Component: CanvasDemoPage },
   {
     Component: Guard,
     children: [
@@ -71,6 +76,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, Component: HomePage },
           { path: "projects", Component: ProjectsPage },
+          { path: "projects/new", Component: CreateProjectPage },
           { path: "projects/:id", Component: ProjectsPage },
           { path: "projects/:id/permissions", Component: ProjectPermissionsPage },
           { path: "dashboards/:id", Component: DashboardViewPage },
@@ -88,6 +94,7 @@ const router = createBrowserRouter([
           { path: "sheets/:id/edit", Component: SheetBuilderPage },
           { path: "admin/users", Component: UsersPage },
           { path: "admin/users/add", Component: AddUsersPage },
+          { path: "admin/users/new", Component: AddUsersPage },
           { path: "admin/groups", Component: GroupsPage },
           { path: "admin/settings", Component: SettingsPage },
           { path: "403", element: <ErrorPage code="403" /> },

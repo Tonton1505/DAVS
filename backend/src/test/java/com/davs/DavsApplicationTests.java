@@ -57,6 +57,13 @@ class DavsApplicationTests {
     }
 
     @Test
+    void T005_unauthenticatedProtectedEndpointReturns401ErrAuth05() throws Exception {
+        mockMvc.perform(get("/api/v1/projects"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("ERR-AUTH-05"));
+    }
+
+    @Test
     void T003_openApiDocsEndpointIsAvailable() throws Exception {
         mockMvc.perform(get("/api/docs"))
                 .andExpect(status().is3xxRedirection());
