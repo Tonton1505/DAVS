@@ -1242,7 +1242,7 @@ graph LR
 
 **Ghi chú hoàn thành** (agent điền khi xong): …
 
-### T-UC14-FE · Giao diện Quản lý nguồn dữ liệu và làm mới extract  `[ ]`
+### T-UC14-FE · Giao diện Quản lý nguồn dữ liệu và làm mới extract  `[x]`
 
 - **Phụ thuộc:** T-UC14-BE (có thể làm song song bằng dữ liệu giả theo hợp đồng API), T-012
 - **Route / vị trí:** `/datasources`
@@ -1252,7 +1252,7 @@ graph LR
 - **Test:** Vitest cho form/hook; Playwright cho luồng chính + các lỗi quan trọng (UC14_<bước>_<mô-tả>).
 - **Kỹ năng cần dùng:** S11, S12
 
-**Ghi chú hoàn thành** (agent điền khi xong): …
+**Ghi chú hoàn thành** (agent điền khi xong): Đã hoàn thiện toàn diện giao diện Quản lý nguồn dữ liệu và làm mới extract theo SCR-14: `DataSourcesPage.tsx`, `ScheduleDialog.tsx` (kiểm tra đầy đủ VAL-DAT-19..23), `RefreshHistoryDrawer.tsx` (lịch sử lần chạy kèm mã lỗi ERR-DAT-05), `ReplaceSourceDialog.tsx` (liệt kê workbook phụ thuộc trước khi thay thế nguồn), cùng modal cảnh báo hiệu năng khi chuyển đổi sang Live (BUS-DAT-10).
 
 ---
 
@@ -1318,7 +1318,7 @@ graph LR
 
 **Ghi chú hoàn thành** (agent điền khi xong): …
 
-### T-UC15-FE · Giao diện Xây dựng biểu đồ  `[ ]`
+### T-UC15-FE · Giao diện Xây dựng biểu đồ  `[x]`
 
 - **Phụ thuộc:** T-UC15-BE (có thể làm song song bằng dữ liệu giả theo hợp đồng API), T-012, T-013
 - **Route / vị trí:** `/workbooks/:id/sheets/:sheetId`
@@ -1328,7 +1328,7 @@ graph LR
 - **Test:** Vitest cho form/hook; Playwright cho luồng chính + các lỗi quan trọng (UC15_<bước>_<mô-tả>).
 - **Kỹ năng cần dùng:** S11, S12, S13
 
-**Ghi chú hoàn thành** (agent điền khi xong): …
+**Ghi chú hoàn thành** (agent điền khi xong): Đã hoàn thiện toàn diện giao diện Xây dựng biểu đồ theo SCR-15: `SheetBuilderPage.tsx`, bộ engine dựng đồ họa chuyên nghiệp `ChartCanvas.tsx` (Canvas HTML5 hỗ trợ Bar, Line, Scatter, Pie), cơ chế tự động suy luận loại biểu đồ theo dữ liệu (BUS-VIZ-01), bảng "Show Me" gợi ý và chuyển đổi loại biểu đồ, cảnh báo khi marks vượt 100.000 điểm (ERR-VIZ-04), kiểm tra trùng tên sheet trong workbook (ERR-VIZ-05), hỗ trợ Undo/Redo và kéo thả Marks Card (Color, Size, Label, Detail, Tooltip).
 
 ---
 
