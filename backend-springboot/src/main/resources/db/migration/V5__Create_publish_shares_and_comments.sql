@@ -1,2 +1,0 @@
--- UC21..UC24: Bảng shares, export_jobs, comments
-CREATE TABLE IF NOT EXISTS comments (id BIGSERIAL PRIMARY KEY, dashboard_id BIGINT NOT NULL, content VARCHAR(1000) NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);

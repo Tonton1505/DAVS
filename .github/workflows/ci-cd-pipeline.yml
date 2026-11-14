@@ -26,7 +26,7 @@ jobs:
           cache: maven
 
       - name: Run Maven verify
-        working-directory: backend
+        working-directory: backend-springboot
         run: mvn -B verify
 
   frontend:

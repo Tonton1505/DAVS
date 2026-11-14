@@ -5,11 +5,11 @@ FROM maven:3.9.9-eclipse-temurin-21-alpine AS build
 WORKDIR /workspace
 
 # Cache Maven dependencies first
-COPY backend/pom.xml backend/checkstyle.xml ./
+COPY backend-springboot/pom.xml backend-springboot/checkstyle.xml ./
 RUN mvn -B -q dependency:go-offline
 
 # Copy source code and package executable JAR
-COPY backend/src ./src
+COPY backend-springboot/src ./src
 RUN mvn -B -q clean package -DskipTests
 
 # ============================================================================
