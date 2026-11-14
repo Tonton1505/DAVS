@@ -80,3 +80,9 @@ infra/miniodata/
 ehthumbs.db
 Thumbs.db
 Desktop.ini
+
+# --- Docs & Notes (keep README.md and PR template) ---
+*.docx
+*.md
+!**/README.md
+!.github/pull_request_template.md
