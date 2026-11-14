@@ -30,7 +30,7 @@
     <module name="SimplifyBooleanReturn"/>
     <module name="UpperEll"/>
     <module name="PackageName">
-      <property name="format" value="^com\.davs(\.[a-z][a-z0-9]*)*$"/>
+      <property name="format" value="^vn\.edu\.davs\.backend(\.(Wrapper|[a-z][a-z0-9]*))*$"/>
     </module>
     <module name="TypeName"/>
     <module name="MemberName"/>

@@ -11,10 +11,10 @@
     <relativePath/>
   </parent>
 
-  <groupId>com.davs</groupId>
-  <artifactId>davs-backend</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
-  <name>DAVS Backend</name>
+  <groupId>vn.edu.davs</groupId>
+  <artifactId>backend-springboot</artifactId>
+  <version>1.0.0</version>
+  <name>DAVS Backend SpringBoot</name>
   <description>DAVS – Data Analytics &amp; Visualization System (Modular Monolith Backend)</description>
 
   <properties>
