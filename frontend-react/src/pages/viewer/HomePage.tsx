@@ -1,21 +1,62 @@
-import { useEffect } from "react";
-import { ArrowRight, Database, LayoutDashboard, Star, Upload, WandSparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, Database, Folder, LayoutDashboard, Star, Upload, WandSparkles } from "lucide-react";
 import { useNavigate } from "react-router";
 import { Button, Card, PageHeader, Progress, SkeletonRows } from "../../components/ui";
 import { useAuthStore } from "../../stores/auth.store";
 import { useWorkbookStore } from "../../stores/workbook.store";
+import { projectService, type ProjectDto } from "../../services/project.service";
+import { userService, type LicensePoolDto } from "../../services/user.service";
+
+const ROLE_LABELS: Record<LicensePoolDto["role"], string> = {
+  SITE_ADMIN: "Giấy phép Site Admin",
+  CREATOR: "Giấy phép Creator",
+  EXPLORER: "Giấy phép Explorer",
+  VIEWER: "Giấy phép Viewer",
+};
+
 export default function HomePage() {
-  const nav = useNavigate(),
-    { role, name } = useAuthStore(),
-    { items, loading, load } = useWorkbookStore();
+  const nav = useNavigate();
+  const { role, name } = useAuthStore();
+  const { items, loading, load } = useWorkbookStore();
+  const [licenses, setLicenses] = useState<LicensePoolDto[]>([]);
+  const [projects, setProjects] = useState<ProjectDto[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+
   useEffect(() => {
     load();
-  }, [load]);
+    let cancelled = false;
+    projectService
+      .list()
+      .then((data) => {
+        if (!cancelled) setProjects(data);
+      })
+      .catch(() => {
+        if (!cancelled) setProjects([]);
+      })
+      .finally(() => {
+        if (!cancelled) setProjectsLoading(false);
+      });
+
+    if (role === "admin") {
+      userService
+        .listLicenses()
+        .then((data) => {
+          if (!cancelled) setLicenses(data);
+        })
+        .catch(() => {
+          if (!cancelled) setLicenses([]);
+        });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [load, role]);
+
   return (
     <>
       <PageHeader
-        title={`Xin chào, ${name}`}
-        eyebrow="DAVS · Công ty ABC"
+        title={`Xin chào${name ? `, ${name}` : ""}`}
+        eyebrow="DAVS"
         actions={
           role === "creator" || role === "admin" ? (
             <Button variant="primary" onClick={() => nav("/data-sources/new")}>
@@ -25,11 +66,21 @@ export default function HomePage() {
           ) : undefined
         }
       />
-      {role === "admin" && (
+      {role === "admin" && licenses.length > 0 && (
         <div className="mb-6 grid gap-4 md:grid-cols-3">
-          <Kpi title="Giấy phép Creator" value="8 / 10" p={80} />
-          <Kpi title="Giấy phép Explorer" value="22 / 30" p={73} />
-          <Kpi title="Giấy phép Viewer" value="140 / 200" p={70} />
+          {licenses
+            .filter((l) => l.role !== "SITE_ADMIN")
+            .map((pool) => {
+              const pct = pool.total > 0 ? Math.round((pool.used / pool.total) * 100) : 0;
+              return (
+                <Kpi
+                  key={pool.role}
+                  title={ROLE_LABELS[pool.role] ?? pool.role}
+                  value={`${pool.used} / ${pool.total}`}
+                  p={pct}
+                />
+              );
+            })}
         </div>
       )}
       {(role === "creator" || role === "admin") && (
@@ -46,13 +97,54 @@ export default function HomePage() {
       )}
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <div className="text-base font-semibold">Xem gần đây</div>
+          <div className="text-base font-semibold">Dự án</div>
+          <Button variant="ghost" onClick={() => nav("/projects")}>
+            Xem tất cả <ArrowRight className="size-4" />
+          </Button>
+        </div>
+        {projectsLoading ? (
+          <SkeletonRows />
+        ) : projects.length === 0 ? (
+          <Card className="text-sm text-muted-foreground">Chưa có dự án nào.</Card>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {projects.slice(0, 6).map((p) => (
+              <button
+                key={p.id}
+                onClick={() => nav("/projects")}
+                className="flex items-start gap-3 rounded-xl border bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-muted-foreground"
+              >
+                <span className="rounded-lg bg-muted p-3">
+                  <Folder className="size-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-semibold text-ink">{p.name}</div>
+                  {p.description && (
+                    <div className="mt-1 truncate text-xs text-muted-foreground">{p.description}</div>
+                  )}
+                  <div className="mt-2 inline-block rounded bg-muted px-2 py-0.5 text-[10px]">
+                    {p.permissionMode}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="mt-8">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="text-base font-semibold">Dashboard gần đây</div>
           <Button variant="ghost" onClick={() => nav("/projects")}>
             Xem tất cả <ArrowRight className="size-4" />
           </Button>
         </div>
         {loading ? (
           <SkeletonRows />
+        ) : items.length === 0 ? (
+          <Card className="text-sm text-muted-foreground">
+            Chưa có dashboard nào được xuất bản.
+          </Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {items.map((x) => (
@@ -84,35 +176,10 @@ export default function HomePage() {
           </div>
         )}
       </section>
-      <div className="mt-8 grid gap-4 lg:grid-cols-2">
-        <Card>
-          <div className="font-semibold">Được chia sẻ với tôi</div>
-          <div className="mt-3 divide-y">
-            {items.slice(1).map((x) => (
-              <button
-                key={x.id}
-                onClick={() => nav(`/dashboards/${x.id}`)}
-                className="flex w-full items-center justify-between py-3 text-left"
-              >
-                <span>{x.name}</span>
-                <span className="text-xs text-muted-foreground">{x.owner}</span>
-              </button>
-            ))}
-          </div>
-        </Card>
-        {(role === "creator" || role === "admin") && (
-          <Card className="border-primary-border bg-primary-tint">
-            <div className="font-semibold">Làm mới dữ liệu thất bại gần đây</div>
-            <div className="mt-2 text-sm">Salesforce CRM · Đã thất bại 4 lần liên tiếp</div>
-            <Button className="mt-4" onClick={() => nav("/data-sources")}>
-              Xem chi tiết
-            </Button>
-          </Card>
-        )}
-      </div>
     </>
   );
 }
+
 function Kpi({ title, value, p }: { title: string; value: string; p: number }) {
   return (
     <Card>
@@ -122,6 +189,7 @@ function Kpi({ title, value, p }: { title: string; value: string; p: number }) {
     </Card>
   );
 }
+
 function Quick({
   icon: Icon,
   label,

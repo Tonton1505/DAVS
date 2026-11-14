@@ -31,7 +31,7 @@ describe("RequireAuth and RequireRole route guards", () => {
   });
 
   it("redirects insufficient role to /403 and allows authorized role", () => {
-    useAuthStore.getState().login("viewer");
+    useAuthStore.getState().setSession({ accessToken: "test-token", role: "viewer" });
     const { unmount } = render(
       <MemoryRouter initialEntries={["/admin"]}>
         <Routes>
@@ -50,7 +50,7 @@ describe("RequireAuth and RequireRole route guards", () => {
     expect(screen.getByText("Forbidden 403")).toBeInTheDocument();
     unmount();
 
-    useAuthStore.getState().login("admin");
+    useAuthStore.getState().setSession({ accessToken: "test-token", role: "admin" });
     render(
       <MemoryRouter initialEntries={["/admin"]}>
         <Routes>

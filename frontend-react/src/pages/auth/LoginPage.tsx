@@ -3,8 +3,6 @@ import { Eye, EyeOff, LoaderCircle } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router";
 import { Button, Card, Input, Label } from "../../components/ui";
 import { useAuthStore } from "../../stores/auth.store";
-import type { Role } from "../../common/constants/types";
-import { ROLE_LABELS } from "../../common/constants/app-constants";
 import { MESSAGES } from "../../common/constants/messages";
 import { extractApiError } from "../../lib/axios/client";
 import {
@@ -18,7 +16,6 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export default function LoginPage() {
   const nav = useNavigate();
   const [params] = useSearchParams();
-  const demoLogin = useAuthStore((s) => s.login);
   const setSession = useAuthStore((s) => s.setSession);
   const setTokens = useAuthStore((s) => s.setTokens);
   const clearSession = useAuthStore((s) => s.logout);
@@ -31,11 +28,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [pendingActivation, setPendingActivation] = useState<AuthTokenResponse | null>(null);
   const [accepted, setAccepted] = useState(false);
-
-  const quick = (r: Role) => {
-    demoLogin(r);
-    nav("/");
-  };
 
   const finishLogin = (authResponse: AuthTokenResponse) => {
     const uiRole = mapSiteRoleToUiRole(authResponse.user.siteRole);
@@ -246,25 +238,6 @@ export default function LoginPage() {
         <Button type="button" className="mt-2 w-full">
           Đăng nhập bằng SSO
         </Button>
-        {import.meta.env.DEV && (
-          <>
-            <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
-              Đăng nhập nhanh (demo)
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {(["admin", "creator", "explorer", "viewer"] as Role[]).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => quick(r)}
-                  className="rounded-full border px-3 py-2 text-xs hover:border-primary hover:text-primary"
-                >
-                  {ROLE_LABELS[r]}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
       </Card>
     </div>
   );

@@ -1,5 +1,4 @@
-import axios, { type AxiosError, type AxiosRequestConfig, type AxiosResponse } from "axios";
-import { MOCK_DATA } from "../../services/auth.service";
+import axios, { type AxiosError, type AxiosRequestConfig } from "axios";
 import { useAuthStore } from "../../stores/auth.store";
 import { applyApiError, extractApiError } from "../api/error";
 
@@ -96,22 +95,5 @@ client.interceptors.response.use(
     return Promise.reject(error);
   },
 );
-
-const defaultAdapter = client.defaults.adapter;
-client.defaults.adapter = async (config) => {
-  const useMock =
-    import.meta.env.VITE_USE_MOCK_API === "true" ||
-    (typeof window !== "undefined" && localStorage.getItem("davs-token") === "demo-token");
-  if (useMock && import.meta.env.MODE !== "test") {
-    await new Promise((resolve) => setTimeout(resolve, 150));
-    const path = (config.url || "").replace("/api", "");
-    const data = MOCK_DATA[path] ?? { ok: true };
-    return { data, status: 200, statusText: "OK", headers: {}, config } as AxiosResponse;
-  }
-  if (typeof defaultAdapter === "function") {
-    return defaultAdapter(config);
-  }
-  return axios.getAdapter(axios.defaults.adapter)(config);
-};
 
 export default client;

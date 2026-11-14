@@ -10,7 +10,7 @@ describe("Sidebar role-based navigation (DIS-AUTH-01)", () => {
   });
 
   it("shows all admin and workspace items for admin", () => {
-    useAuthStore.getState().login("admin");
+    useAuthStore.getState().setSession({ accessToken: "test-token", role: "admin" });
     render(
       <MemoryRouter>
         <Sidebar />
@@ -26,7 +26,7 @@ describe("Sidebar role-based navigation (DIS-AUTH-01)", () => {
   });
 
   it("hides admin items for creator", () => {
-    useAuthStore.getState().login("creator");
+    useAuthStore.getState().setSession({ accessToken: "test-token", role: "creator" });
     render(
       <MemoryRouter>
         <Sidebar />
@@ -43,7 +43,7 @@ describe("Sidebar role-based navigation (DIS-AUTH-01)", () => {
   });
 
   it("hides creator and admin items for explorer", () => {
-    useAuthStore.getState().login("explorer");
+    useAuthStore.getState().setSession({ accessToken: "test-token", role: "explorer" });
     render(
       <MemoryRouter>
         <Sidebar />
@@ -58,7 +58,7 @@ describe("Sidebar role-based navigation (DIS-AUTH-01)", () => {
   });
 
   it("shows only viewer items for viewer", () => {
-    useAuthStore.getState().login("viewer");
+    useAuthStore.getState().setSession({ accessToken: "test-token", role: "viewer" });
     render(
       <MemoryRouter>
         <Sidebar />

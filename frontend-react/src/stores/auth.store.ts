@@ -1,13 +1,6 @@
 import { create } from "zustand";
 import type { Role } from "../common/constants/types";
 
-const ROLE_DEFAULT_NAMES: Record<Role, string> = {
-  admin: "Lê Thu Hà",
-  creator: "Nguyễn Văn An",
-  explorer: "Trần Thị Bình",
-  viewer: "Lê Minh Trang",
-};
-
 type SessionInput = {
   accessToken: string;
   refreshToken?: string | null;
@@ -20,37 +13,33 @@ type AuthState = {
   name: string;
   accessToken: string | null;
   refreshToken: string | null;
-  login: (role: Role) => void;
   setSession: (session: SessionInput) => void;
   setTokens: (accessToken: string, refreshToken?: string | null) => void;
   logout: () => void;
 };
 
-const savedRole =
-  (typeof window !== "undefined" ? (localStorage.getItem("davs-role") as Role | null) : null) ||
-  "admin";
 const savedToken =
   typeof window !== "undefined" ? localStorage.getItem("davs-token") : null;
 const savedRefreshToken =
   typeof window !== "undefined" ? localStorage.getItem("davs-refresh-token") : null;
+const savedRole =
+  savedToken && typeof window !== "undefined"
+    ? (localStorage.getItem("davs-role") as Role | null)
+    : null;
+const savedName =
+  savedToken && typeof window !== "undefined"
+    ? localStorage.getItem("davs-user-name") ?? ""
+    : "";
 
 export const useAuthStore = create<AuthState>((set) => ({
   role: savedRole,
-  name: savedRole ? ROLE_DEFAULT_NAMES[savedRole] : "",
+  name: savedName,
   accessToken: savedToken,
   refreshToken: savedRefreshToken,
-  login: (role) => {
-    localStorage.setItem("davs-role", role);
-    localStorage.setItem("davs-token", "demo-token");
-    set({
-      role,
-      name: ROLE_DEFAULT_NAMES[role],
-      accessToken: "demo-token",
-    });
-  },
-  setSession: ({ accessToken, refreshToken = null, role, name }) => {
+  setSession: ({ accessToken, refreshToken = null, role, name = "" }) => {
     localStorage.setItem("davs-role", role);
     localStorage.setItem("davs-token", accessToken);
+    localStorage.setItem("davs-user-name", name);
     if (refreshToken) {
       localStorage.setItem("davs-refresh-token", refreshToken);
     } else {
@@ -58,7 +47,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
     set({
       role,
-      name: name ?? ROLE_DEFAULT_NAMES[role],
+      name,
       accessToken,
       refreshToken,
     });
@@ -81,6 +70,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.removeItem("davs-role");
     localStorage.removeItem("davs-token");
     localStorage.removeItem("davs-refresh-token");
+    localStorage.removeItem("davs-user-name");
     set({ role: null, name: "", accessToken: null, refreshToken: null });
   },
 }));

@@ -1,10 +1,18 @@
 import { create } from "zustand";
 import type { Comment } from "../common/constants/types";
 import { commentService } from "../services/comment.service";
+
 type State = { items: Comment[]; load: () => Promise<void>; add: (body: string) => void };
+
 export const useCommentStore = create<State>((set) => ({
   items: [],
-  load: async () => set({ items: await commentService.list() }),
+  load: async () => {
+    try {
+      set({ items: await commentService.list() });
+    } catch {
+      set({ items: [] });
+    }
+  },
   add: (body) =>
     set((s) => ({
       items: [
