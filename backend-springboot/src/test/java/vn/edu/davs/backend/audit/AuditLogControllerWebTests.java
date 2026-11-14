@@ -157,6 +157,10 @@ class AuditLogControllerWebTests {
                 public Optional<UserSessionSnapshot> findSessionSnapshot(UUID userId) {
                     return Optional.of(new UserSessionSnapshot(Instant.now().minusSeconds(60), "ACTIVE"));
                 }
+
+                @Override
+                public void touchLastActivity(UUID userId, Instant activityTime) {
+                }
             };
         }
 

@@ -42,6 +42,9 @@ public class UserActivityService {
     }
 
     public void touchLastActivity(UUID userId, Instant activityTime) {
+        if (jdbcTemplate.getDataSource() == null) {
+            return;
+        }
         try {
             jdbcTemplate.update(
                     "UPDATE users SET last_activity_at = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL",

@@ -40,8 +40,42 @@ export interface ImportJobStatusResponse {
   hasErrorReport: boolean;
 }
 
+export interface UserManagementDto {
+  id: string;
+  email: string;
+  fullName: string;
+  siteRole: BackendSiteRole;
+  authMethod: string;
+  status: string;
+  groups: string[];
+  lastLoginAt: string | null;
+  ownedResourcesCount: number;
+  createdAt: string;
+}
+
+export interface UserPageResponse {
+  content: UserManagementDto[];
+  page: number;
+  size: number;
+  totalElements: number;
+}
+
+export interface SearchUsersParams {
+  q?: string;
+  role?: string;
+  group?: string;
+  status?: string;
+  page?: number;
+  size?: number;
+}
+
 export const userService = {
   list: async () => (await client.get<User[]>(API.users)).data,
+
+  async searchUsers(params: SearchUsersParams = {}): Promise<UserPageResponse> {
+    const { data } = await client.get<UserPageResponse>("/v1/users", { params });
+    return data;
+  },
 
   async listLicenses(): Promise<LicensePoolDto[]> {
     const { data } = await client.get<LicensePoolDto[]>("/v1/users/licenses");
@@ -51,6 +85,40 @@ export const userService = {
   async createUsers(payload: CreateUsersPayload): Promise<CreateUsersResponse> {
     const { data } = await client.post<CreateUsersResponse>("/v1/users", payload);
     return data;
+  },
+
+  async changeRole(userId: string, role: BackendSiteRole): Promise<UserManagementDto> {
+    const { data } = await client.patch<UserManagementDto>(`/v1/users/${userId}/role`, { role });
+    return data;
+  },
+
+  async batchChangeRole(userIds: string[], role: BackendSiteRole): Promise<UserManagementDto[]> {
+    const { data } = await client.patch<UserManagementDto[]>("/v1/users/batch-role", {
+      userIds,
+      role,
+    });
+    return data;
+  },
+
+  async deactivateUser(userId: string): Promise<UserManagementDto> {
+    const { data } = await client.post<UserManagementDto>(`/v1/users/${userId}/deactivate`);
+    return data;
+  },
+
+  async activateUser(userId: string): Promise<UserManagementDto> {
+    const { data } = await client.post<UserManagementDto>(`/v1/users/${userId}/activate`);
+    return data;
+  },
+
+  async resendInvite(userId: string): Promise<UserManagementDto> {
+    const { data } = await client.post<UserManagementDto>(`/v1/users/${userId}/resend-invite`);
+    return data;
+  },
+
+  async deleteUser(userId: string, newOwnerId?: string): Promise<void> {
+    await client.delete(`/v1/users/${userId}`, {
+      params: newOwnerId ? { newOwnerId } : undefined,
+    });
   },
 
   async importUsers(
