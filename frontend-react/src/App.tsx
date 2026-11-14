@@ -84,6 +84,7 @@ const router = createBrowserRouter([
           { path: "explore", Component: ExplorePage },
           { path: "explore/:sourceId", Component: AdHocAnalysisPage },
           { path: "workbooks/upload", Component: WorkbookUploadPage },
+          { path: "projects/:id/upload", Component: WorkbookUploadPage },
           { path: "workbooks/:id/versions", Component: VersionHistoryPage },
           { path: "workbooks/:id/publish", Component: PublishWorkbookPage },
           { path: "labels", Component: LabelsPage },

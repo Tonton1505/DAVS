@@ -229,16 +229,25 @@ export function Card({ children, className = "" }: { children: ReactNode; classN
 export function Badge({
   children,
   tone = "default",
+  variant,
+  className,
 }: {
   children: ReactNode;
   tone?: "default" | "error" | "dark";
+  variant?: "default" | "muted" | "success" | "danger" | "info" | string;
+  className?: string;
 }) {
+  const resolvedTone = variant === "danger" ? "error" : tone;
   return (
     <span
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs",
-        tone === "error" && "bg-primary-tint text-primary",
-        tone === "dark" && "bg-ink text-white",
+        resolvedTone === "error" && "bg-primary-tint text-primary",
+        resolvedTone === "dark" && "bg-ink text-white",
+        variant === "success" && "bg-emerald-50 text-emerald-700",
+        variant === "info" && "bg-blue-50 text-blue-700",
+        variant === "muted" && "bg-muted text-muted-foreground",
+        className,
       )}
     >
       {children}
@@ -298,7 +307,7 @@ export function PageHeader({
   actions,
 }: {
   title: string;
-  eyebrow?: string;
+  eyebrow?: ReactNode;
   actions?: ReactNode;
 }) {
   return (
@@ -546,8 +555,18 @@ export function DataTable({
   );
 }
 export const Table = DataTable;
-export const Td = ({ children, className = "" }: { children: ReactNode; className?: string }) => (
-  <td className={cn("h-12 px-4 text-sm", className)}>{children}</td>
+export const Td = ({
+  children,
+  className = "",
+  colSpan,
+}: {
+  children: ReactNode;
+  className?: string;
+  colSpan?: number;
+}) => (
+  <td colSpan={colSpan} className={cn("h-12 px-4 text-sm", className)}>
+    {children}
+  </td>
 );
 export function RowMenu() {
   return (
