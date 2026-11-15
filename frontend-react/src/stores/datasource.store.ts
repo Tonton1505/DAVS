@@ -10,7 +10,26 @@ export const useDatasourceStore = create<State>((set) => ({
   load: async () => {
     set({ loading: true });
     try {
-      set({ items: await datasourceService.list(), loading: false });
+      const list = await datasourceService.list();
+      const mapped: DataSource[] = list.map((d) => ({
+        id: d.id,
+        name: d.name,
+        type: d.connectorType,
+        mode: d.mode === "EXTRACT" ? "Extract" : "Live",
+        refreshed: d.lastRefreshedAt
+          ? new Date(d.lastRefreshedAt).toLocaleString("vi-VN")
+          : "Chưa làm mới",
+        status:
+          d.status === "FAILED"
+            ? "Thất bại"
+            : d.status === "PAUSED"
+              ? "Tạm dừng"
+              : d.status === "REFRESHING"
+                ? "Đang chạy"
+                : "Thành công",
+        workbooks: d.dependentWorkbooksCount ?? 0,
+      }));
+      set({ items: mapped, loading: false });
     } catch {
       set({ items: [], loading: false });
     }

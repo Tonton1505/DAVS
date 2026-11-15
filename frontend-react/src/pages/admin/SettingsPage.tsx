@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router";
 import {
   Button,
   Input,
@@ -17,6 +18,10 @@ import ConnectedAppsTab from "./ConnectedAppsTab";
 import IntegrationsTab from "./IntegrationsTab";
 
 export default function SettingsPage() {
+  const location = useLocation();
+  const initialTab = location.pathname.endsWith("/integrations")
+    ? "integrations"
+    : "general";
   const [settings, setSettings] = useState<SystemSettingDto[]>([]);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [settingsLoading, setSettingsLoading] = useState(true);
@@ -80,7 +85,7 @@ export default function SettingsPage() {
   return (
     <>
       <PageHeader title="Cài đặt" eyebrow="Quản trị" />
-      <Tabs defaultValue="general">
+      <Tabs defaultValue={initialTab}>
         <TabsList>
           <TabsTrigger value="general">Chung</TabsTrigger>
           <TabsTrigger value="integrations">Tích hợp</TabsTrigger>
