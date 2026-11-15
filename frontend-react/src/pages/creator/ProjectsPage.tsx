@@ -8,7 +8,6 @@ import {
   Grid2X2,
   History,
   List,
-  MoreVertical,
   Move,
   Pencil,
   Plus,
@@ -36,7 +35,6 @@ import {
   projectService,
   type ContentItemDto,
   type ContentListResponse,
-  type ProjectDto,
   type ProjectTreeNodeDto,
   type CollectionDto,
 } from "../../services/project.service";
@@ -109,8 +107,29 @@ export default function ProjectsPage() {
   }, [routeProjectId, q, sort, toast]);
 
   useEffect(() => {
-    fetchContent();
-  }, [fetchContent]);
+    let ignore = false;
+    projectService
+      .getContent({
+        projectId: routeProjectId || null,
+        q,
+        sort,
+      })
+      .then((data) => {
+        if (!ignore) setContent(data);
+      })
+      .catch((err) => {
+        if (!ignore) {
+          const parsed = extractApiError(err);
+          toast(parsed?.message || "Không thể tải danh sách nội dung", "error");
+        }
+      })
+      .finally(() => {
+        if (!ignore) setLoading(false);
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [routeProjectId, q, sort, toast]);
 
   // Handle Rename
   const handleRenameSubmit = async () => {

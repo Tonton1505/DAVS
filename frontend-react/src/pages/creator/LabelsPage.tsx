@@ -96,12 +96,40 @@ export default function LabelsPage() {
   }, [selectedCategoryId, q]);
 
   useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+    let ignore = false;
+    labelService
+      .listCategories()
+      .then((data) => {
+        if (!ignore) setCategories(data);
+      })
+      .catch(() => {
+        if (!ignore) setCategories([]);
+      });
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   useEffect(() => {
-    fetchLabels();
-  }, [fetchLabels]);
+    let ignore = false;
+    labelService
+      .listLabels({
+        categoryId: selectedCategoryId || undefined,
+        q: q.trim() || undefined,
+      })
+      .then((data) => {
+        if (!ignore) setLabels(data);
+      })
+      .catch(() => {
+        if (!ignore) setLabels([]);
+      })
+      .finally(() => {
+        if (!ignore) setLoading(false);
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [selectedCategoryId, q]);
 
   // Create Category Submit
   const handleCreateCategorySubmit = async () => {

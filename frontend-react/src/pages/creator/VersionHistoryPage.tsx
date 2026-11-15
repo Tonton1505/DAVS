@@ -10,7 +10,6 @@ import { useNavigate, useParams } from "react-router";
 import {
   Badge,
   Button,
-  Card,
   DataTable,
   Dialog,
   Label,
@@ -67,8 +66,34 @@ export default function VersionHistoryPage() {
   }, [workbookId, toast]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let ignore = false;
+    async function load() {
+      if (!workbookId) return;
+      try {
+        const [wb, vers] = await Promise.all([
+          workbookService.getById(workbookId),
+          workbookService.listVersions(workbookId),
+        ]);
+        if (!ignore) {
+          setWorkbook(wb);
+          setVersions(vers);
+        }
+      } catch (err) {
+        if (!ignore) {
+          const parsed = extractApiError(err);
+          toast(parsed?.message || "Không thể tải lịch sử phiên bản", "error");
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    }
+    load();
+    return () => {
+      ignore = true;
+    };
+  }, [workbookId, toast]);
 
   const handleDownload = async (v: WorkbookVersionDto) => {
     if (!workbookId) return;
