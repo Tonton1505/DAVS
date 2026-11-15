@@ -14,9 +14,10 @@ import {
   datasourceService,
   type ModelFieldDto,
   type ModelRelationshipDto,
-  type RelationshipType,
 } from "../../services/datasource.service";
 import { useUIStore } from "../../stores/ui.store";
+
+type JoinType = "RELATIONSHIP" | "INNER" | "LEFT" | "RIGHT" | "FULL" | "BLEND";
 
 const INITIAL_FIELDS: ModelFieldDto[] = [
   {
@@ -83,8 +84,8 @@ const INITIAL_RELATIONSHIP: ModelRelationshipDto = {
   rightTable: "KhachHang",
   rightKey: "Ma_KH",
   rightKeyType: "STRING",
-  type: "RELATIONSHIP",
-  suggested: true,
+  joinType: "RELATIONSHIP",
+  operator: "=",
 };
 
 export default function DataModelPage() {
@@ -106,8 +107,8 @@ export default function DataModelPage() {
       .getModel(datasourceId)
       .then((model) => {
         if (cancelled) return;
-        if (model.fields.length > 0) setFields(model.fields);
-        if (model.relationships.length > 0) {
+        if (model.fields && model.fields.length > 0) setFields(model.fields);
+        if (model.relationships && model.relationships.length > 0) {
           setRelationship(model.relationships[0]);
           setAccepted(true);
         }
@@ -143,7 +144,7 @@ export default function DataModelPage() {
     setAccepted(true);
     try {
       const suggestions = await datasourceService.suggestRelationships(datasourceId);
-      if (suggestions.length > 0) {
+      if (suggestions && suggestions.length > 0) {
         setRelationship(suggestions[0]);
       }
     } catch {
@@ -164,8 +165,20 @@ export default function DataModelPage() {
     try {
       await datasourceService.saveModel(datasourceId, {
         tables: [
-          { name: "DonHang", schemaName: "public" },
-          { name: "KhachHang", schemaName: "public" },
+          {
+            id: "t1",
+            tableName: "DonHang",
+            schemaName: "public",
+            datasourceId,
+            columns: ["order_date", "region", "Ma_KH", "sales", "profit"],
+          },
+          {
+            id: "t2",
+            tableName: "KhachHang",
+            schemaName: "public",
+            datasourceId,
+            columns: ["Ma_KH", "name", "segment"],
+          },
         ],
         relationships: [relationship],
         fields,
@@ -215,14 +228,17 @@ export default function DataModelPage() {
 
       {(hasKeyTypeMismatch || errorMessage) && (
         <div className="mb-4">
-          <Alert>
+          <Alert role="alert">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span>
                 {errorMessage ??
                   `[ERR-DAT-06] Hai trường khóa không cùng kiểu dữ liệu (${relationship.leftTable}.${relationship.leftKey}: ${relationship.leftKeyType} ≠ ${relationship.rightTable}.${relationship.rightKey}: ${relationship.rightKeyType}). Vui lòng đổi kiểu một trong hai trường trước khi tạo quan hệ.`}
               </span>
               {hasKeyTypeMismatch && (
-                <Button size="sm" onClick={handleCastKeyTypesToMatch}>
+                <Button
+                  className="h-8 px-2 text-xs"
+                  onClick={handleCastKeyTypesToMatch}
+                >
                   Ép kiểu tự động sang {relationship.leftKeyType}
                 </Button>
               )}
@@ -262,11 +278,11 @@ export default function DataModelPage() {
           </div>
           <Select
             aria-label="Loại quan hệ"
-            value={relationship.type}
+            value={relationship.joinType}
             onChange={(e) =>
               setRelationship({
                 ...relationship,
-                type: e.target.value as RelationshipType,
+                joinType: e.target.value as JoinType,
               })
             }
             className="h-7 bg-white text-xs"
@@ -435,7 +451,7 @@ export default function DataModelPage() {
                   <td className="p-3">{f.sourceTable}</td>
                   <td className="p-3">
                     <Button
-                      size="sm"
+                      className="h-8 px-2 text-xs"
                       aria-label={f.hidden ? `Hiện ${f.alias}` : `Ẩn ${f.alias}`}
                       onClick={() => updateField(idx, { hidden: !f.hidden })}
                     >

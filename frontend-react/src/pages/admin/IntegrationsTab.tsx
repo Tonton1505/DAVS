@@ -4,29 +4,34 @@ import {
   integrationService,
   type IntegrationConnectResponse,
   type IntegrationDto,
-  type IntegrationProvider,
 } from "../../services/integration.service";
 import { useUIStore } from "../../stores/ui.store";
 
 const FALLBACK_INTEGRATIONS: IntegrationDto[] = [
   {
-    provider: "SLACK",
+    platform: "SLACK",
     displayName: "Slack",
     description: "Gửi thông báo, chia sẻ view",
     status: "CONNECTED",
     scopes: "chat:write,channels:read,files:write",
-    accountEmail: "ha.le@congty.vn",
+    accountName: "ha.le@congty.vn",
+    hasToken: true,
     tokenExpiresAt: null,
+    connectedAt: "2026-10-31T09:00:00Z",
+    connectedBy: "u-admin",
     updatedAt: "2026-10-31T09:00:00Z",
   },
   {
-    provider: "SALESFORCE",
+    platform: "SALESFORCE",
     displayName: "Salesforce",
     description: "Dữ liệu CRM, đăng nhập một lần",
     status: "DISCONNECTED",
     scopes: "api,refresh_token,openid",
-    accountEmail: null,
+    accountName: null,
+    hasToken: false,
     tokenExpiresAt: null,
+    connectedAt: null,
+    connectedBy: null,
     updatedAt: "2026-10-31T09:00:00Z",
   },
 ];
@@ -49,7 +54,7 @@ export default function IntegrationsTab() {
   const loadIntegrations = useCallback(async () => {
     try {
       const list = await integrationService.list();
-      if (list.length > 0) {
+      if (list && list.length > 0) {
         setItems(list);
       }
     } catch {
@@ -58,36 +63,42 @@ export default function IntegrationsTab() {
   }, []);
 
   useEffect(() => {
-    void loadIntegrations();
+    let cancelled = false;
+    Promise.resolve().then(async () => {
+      if (!cancelled) await loadIntegrations();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [loadIntegrations]);
 
   async function handleStartConnect(item: IntegrationDto) {
     setErrorMessage(null);
     setTarget(item);
     try {
-      const res = await integrationService.initiateConnect(item.provider);
+      const res = await integrationService.initiateConnect(item.platform);
       setOauthInfo(res);
     } catch {
       setOauthInfo({
-        provider: item.provider,
-        authorizationUrl: `https://oauth.davs.local/authorize?provider=${item.provider}`,
-        state: `state-${item.provider.toLowerCase()}`,
+        platform: item.platform,
+        authorizeUrl: `https://oauth.davs.local/authorize?platform=${item.platform}`,
+        state: `state-${item.platform.toLowerCase()}`,
         scopes: item.scopes,
       });
     }
   }
 
-  async function handleDisconnect(provider: IntegrationProvider) {
+  async function handleDisconnect(platform: string) {
     setErrorMessage(null);
     try {
-      const updated = await integrationService.disconnect(provider);
+      const updated = await integrationService.disconnect(platform);
       setItems((prev) =>
-        prev.map((it) => (it.provider === provider ? updated : it)),
+        prev.map((it) => (it.platform === platform ? updated : it)),
       );
     } catch {
       setItems((prev) =>
         prev.map((it) =>
-          it.provider === provider ? { ...it, status: "DISCONNECTED" } : it,
+          it.platform === platform ? { ...it, status: "DISCONNECTED" } : it,
         ),
       );
     }
@@ -102,19 +113,19 @@ export default function IntegrationsTab() {
     }
     setErrorMessage(null);
     try {
-      const updated = await integrationService.handleCallback(target.provider, {
-        code: `auth-code-${target.provider.toLowerCase()}`,
+      const updated = await integrationService.handleCallback(target.platform, {
+        code: `auth-code-${target.platform.toLowerCase()}`,
         state: oauthInfo?.state ?? "valid-state",
-        accountEmail,
+        accountName: accountEmail,
       });
       setItems((prev) =>
-        prev.map((it) => (it.provider === target.provider ? updated : it)),
+        prev.map((it) => (it.platform === target.platform ? updated : it)),
       );
     } catch {
       setItems((prev) =>
         prev.map((it) =>
-          it.provider === target.provider
-            ? { ...it, status: "CONNECTED", accountEmail }
+          it.platform === target.platform
+            ? { ...it, status: "CONNECTED", accountName: accountEmail }
             : it,
         ),
       );
@@ -126,7 +137,7 @@ export default function IntegrationsTab() {
   async function handleDenyOAuth() {
     if (!target) return;
     try {
-      await integrationService.handleCallback(target.provider, {
+      await integrationService.handleCallback(target.platform, {
         error: "access_denied",
         state: oauthInfo?.state,
       });
@@ -148,7 +159,7 @@ export default function IntegrationsTab() {
     <>
       {errorMessage && (
         <div className="mb-4">
-          <Alert>{errorMessage}</Alert>
+          <Alert role="alert">{errorMessage}</Alert>
         </div>
       )}
 
@@ -156,7 +167,7 @@ export default function IntegrationsTab() {
         {items.map((item) => {
           const isConnected = item.status === "CONNECTED";
           return (
-            <div key={item.provider} className="rounded-xl border p-6">
+            <div key={item.platform} className="rounded-xl border p-6">
               <div className="flex items-start justify-between">
                 <span className="flex size-12 items-center justify-center rounded-lg bg-ink text-lg font-bold text-white">
                   {item.displayName[0]}
@@ -169,16 +180,16 @@ export default function IntegrationsTab() {
               <div className="mt-1 text-sm text-muted-foreground">
                 {item.description}
               </div>
-              {item.accountEmail && isConnected && (
+              {item.accountName && isConnected && (
                 <div className="mt-2 text-xs text-muted-foreground">
-                  Tài khoản: {item.accountEmail} · Quyền: {item.scopes}
+                  Tài khoản: {item.accountName} · Quyền: {item.scopes}
                 </div>
               )}
               <Button
                 className="mt-5"
                 onClick={() =>
                   isConnected
-                    ? void handleDisconnect(item.provider)
+                    ? void handleDisconnect(item.platform)
                     : void handleStartConnect(item)
                 }
               >

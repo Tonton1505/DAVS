@@ -12,10 +12,14 @@ vi.mock("../../../services/user.service", () => ({
   userService: {
     searchUsers: vi.fn(),
     listLicenses: vi.fn(),
+    changeRole: vi.fn(),
     updateUserRole: vi.fn(),
+    batchChangeRole: vi.fn(),
     batchUpdateRole: vi.fn(),
     deactivateUser: vi.fn(),
+    activateUser: vi.fn(),
     deleteUser: vi.fn(),
+    resendInvite: vi.fn(),
     list: vi.fn(),
   },
 }));
@@ -56,36 +60,44 @@ describe("Admin Management (UC03, UC04, UC25)", () => {
           id: "u-admin",
           email: "admin@davs.local",
           fullName: "Nguyễn Văn An",
-          role: "ADMIN",
+          siteRole: "SITE_ADMIN",
+          authMethod: "LOCAL",
           status: "ACTIVE",
+          groups: ["Quản trị"],
           lastLoginAt: "2026-10-31T08:00:00Z",
+          ownedResourcesCount: 2,
           createdAt: "2026-10-01T08:00:00Z",
         },
         {
           id: "u-viewer",
           email: "viewer@davs.local",
           fullName: "Phạm Thị Dung",
-          role: "VIEWER",
+          siteRole: "VIEWER",
+          authMethod: "LOCAL",
           status: "ACTIVE",
+          groups: [],
           lastLoginAt: null,
+          ownedResourcesCount: 0,
           createdAt: "2026-10-01T08:00:00Z",
         },
       ],
       page: 0,
       size: 20,
       totalElements: 2,
-      totalPages: 1,
     });
   });
 
   it("UC03: disables roles with 0 remaining licenses and updates user role inline", async () => {
-    vi.mocked(userService.updateUserRole).mockResolvedValue({
+    vi.mocked(userService.changeRole).mockResolvedValue({
       id: "u-viewer",
       email: "viewer@davs.local",
       fullName: "Phạm Thị Dung",
-      role: "EXPLORER",
+      siteRole: "EXPLORER",
+      authMethod: "LOCAL",
       status: "ACTIVE",
+      groups: [],
       lastLoginAt: null,
+      ownedResourcesCount: 0,
       createdAt: "2026-10-01T08:00:00Z",
     });
 
@@ -108,7 +120,7 @@ describe("Admin Management (UC03, UC04, UC25)", () => {
     fireEvent.change(roleSelect, { target: { value: "EXPLORER" } });
 
     await waitFor(() => {
-      expect(userService.updateUserRole).toHaveBeenCalledWith(
+      expect(userService.changeRole).toHaveBeenCalledWith(
         "u-viewer",
         "EXPLORER",
       );
@@ -122,7 +134,7 @@ describe("Admin Management (UC03, UC04, UC25)", () => {
         name: "All Users",
         description: "System default group",
         minRole: null,
-        system: true,
+        isSystem: true,
         memberCount: 2,
         createdAt: "2026-10-01T08:00:00Z",
         updatedAt: "2026-10-01T08:00:00Z",
@@ -132,7 +144,7 @@ describe("Admin Management (UC03, UC04, UC25)", () => {
         name: "Phòng Kinh doanh",
         description: "Nhóm bán hàng",
         minRole: "EXPLORER",
-        system: false,
+        isSystem: false,
         memberCount: 5,
         createdAt: "2026-10-01T08:00:00Z",
         updatedAt: "2026-10-01T08:00:00Z",
@@ -166,19 +178,22 @@ describe("Admin Management (UC03, UC04, UC25)", () => {
   it("UC25: connects integration via OAuth modal and displays ERR-INT-01 on denial", async () => {
     vi.mocked(integrationService.list).mockResolvedValue([
       {
-        provider: "SLACK",
+        platform: "SLACK",
         displayName: "Slack",
         description: "Gửi thông báo, chia sẻ view",
         status: "DISCONNECTED",
         scopes: "chat:write,channels:read",
-        accountEmail: null,
+        accountName: null,
+        hasToken: false,
         tokenExpiresAt: null,
+        connectedAt: null,
+        connectedBy: null,
         updatedAt: "2026-10-31T09:00:00Z",
       },
     ]);
     vi.mocked(integrationService.initiateConnect).mockResolvedValue({
-      provider: "SLACK",
-      authorizationUrl: "https://slack.com/oauth",
+      platform: "SLACK",
+      authorizeUrl: "https://slack.com/oauth",
       state: "state-123",
       scopes: "chat:write,channels:read",
     });

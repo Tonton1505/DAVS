@@ -8,8 +8,8 @@ import {
   Settings2,
 } from "lucide-react";
 import { useNavigate } from "react-router";
+import type { DataSource } from "../../common/constants/types";
 import {
-  Alert,
   Button,
   DataTable,
   Dialog,
@@ -25,10 +25,7 @@ import {
   type DependentWorkbookDto,
   type RefreshRunDto,
 } from "../../services/datasource.service";
-import {
-  useDatasourceStore,
-  type DatasourceRow,
-} from "../../stores/datasource.store";
+import { useDatasourceStore } from "../../stores/datasource.store";
 import { useUIStore } from "../../stores/ui.store";
 
 export default function DataSourcesPage() {
@@ -36,21 +33,21 @@ export default function DataSourcesPage() {
   const { items, loading, load } = useDatasourceStore();
   const toast = useUIStore((s) => s.toast);
 
-  const [scheduleTarget, setScheduleTarget] = useState<DatasourceRow | null>(null);
+  const [scheduleTarget, setScheduleTarget] = useState<DataSource | null>(null);
   const [frequency, setFrequency] = useState<"DAILY" | "WEEKLY" | "MONTHLY">(
     "DAILY",
   );
-  const [timeOfDay, setTimeOfDay] = useState("02:00");
+  const [runTime, setRunTime] = useState("02:00");
   const [timezone, setTimezone] = useState("Asia/Ho_Chi_Minh");
   const [refreshType, setRefreshType] = useState<"FULL" | "INCREMENTAL">("FULL");
-  const [incrementalKey, setIncrementalKey] = useState("updated_at");
+  const [incrementalColumn, setIncrementalColumn] = useState("updated_at");
   const [alertEmails, setAlertEmails] = useState("ha.le@congty.vn");
 
-  const [historyTarget, setHistoryTarget] = useState<DatasourceRow | null>(null);
+  const [historyTarget, setHistoryTarget] = useState<DataSource | null>(null);
   const [refreshRuns, setRefreshRuns] = useState<RefreshRunDto[]>([]);
 
   const [connectionTarget, setConnectionTarget] =
-    useState<DatasourceRow | null>(null);
+    useState<DataSource | null>(null);
   const [dependents, setDependents] = useState<DependentWorkbookDto[]>([]);
   const [connHost, setConnHost] = useState("postgres.congty.vn");
   const [connPort, setConnPort] = useState("5432");
@@ -63,14 +60,10 @@ export default function DataSourcesPage() {
   }, [load]);
 
   const warningSources = items.filter(
-    (x) =>
-      x.status === "Thất bại" ||
-      x.rawStatus === "FAILED" ||
-      x.rawStatus === "PAUSED" ||
-      (x.consecutiveFailures ?? 0) >= 3,
+    (x) => x.status === "Thất bại" || x.status === "Tạm dừng",
   );
 
-  async function handleRefreshNow(row: DatasourceRow) {
+  async function handleRefreshNow(row: DataSource) {
     try {
       await datasourceService.triggerRefresh(row.id);
       toast(`Đã bắt đầu làm mới dữ liệu · ${row.name}`);
@@ -80,7 +73,7 @@ export default function DataSourcesPage() {
     }
   }
 
-  async function handleToggleMode(row: DatasourceRow) {
+  async function handleToggleMode(row: DataSource) {
     const nextMode = row.mode === "Live" ? "EXTRACT" : "LIVE";
     try {
       await datasourceService.updateMode(row.id, nextMode);
@@ -91,7 +84,7 @@ export default function DataSourcesPage() {
     }
   }
 
-  async function openHistoryModal(row: DatasourceRow) {
+  async function openHistoryModal(row: DataSource) {
     setHistoryTarget(row);
     try {
       const runs = await datasourceService.listRefreshRuns(row.id);
@@ -101,10 +94,12 @@ export default function DataSourcesPage() {
         {
           id: "run-1",
           datasourceId: row.id,
-          status: row.status === "Thất bại" ? "FAILED" : "COMPLETED",
+          jobId: "job-1",
           refreshType: "FULL",
+          triggerType: "MANUAL",
+          status: row.status === "Thất bại" ? "FAILED" : "COMPLETED",
           rowsProcessed: 1204330,
-          durationMs: 1420,
+          errorCode: row.status === "Thất bại" ? "ERR-DAT-07" : null,
           errorMessage:
             row.status === "Thất bại"
               ? "[ERR-DAT-07] Hết thời gian chờ từ máy chủ đích"
@@ -116,7 +111,7 @@ export default function DataSourcesPage() {
     }
   }
 
-  async function openConnectionModal(row: DatasourceRow) {
+  async function openConnectionModal(row: DataSource) {
     setConnectionTarget(row);
     try {
       const list = await datasourceService.listDependents(row.id);
@@ -127,13 +122,17 @@ export default function DataSourcesPage() {
           id: "wb-1",
           name: "Báo cáo Doanh số Q4",
           status: "PUBLISHED",
+          projectId: "proj-1",
           ownerId: "user-1",
+          updatedAt: "2026-10-31T09:00:00Z",
         },
         {
           id: "wb-2",
           name: "Phân tích Kênh Phân phối",
           status: "PUBLISHED",
+          projectId: "proj-1",
           ownerId: "user-1",
+          updatedAt: "2026-10-31T09:00:00Z",
         },
       ]);
     }
@@ -144,10 +143,10 @@ export default function DataSourcesPage() {
     try {
       await datasourceService.updateSchedule(scheduleTarget.id, {
         frequency,
-        timeOfDay,
+        runTime,
         timezone,
         refreshType,
-        incrementalKey: refreshType === "INCREMENTAL" ? incrementalKey : null,
+        incrementalColumn: refreshType === "INCREMENTAL" ? incrementalColumn : undefined,
         alertEmails,
       });
     } catch {
@@ -164,9 +163,9 @@ export default function DataSourcesPage() {
       await datasourceService.updateConnection(connectionTarget.id, {
         host: connHost,
         port: Number(connPort) || 5432,
-        database: connDb,
+        databaseName: connDb,
         username: connUser,
-        secretPlaintext: connPassword || undefined,
+        password: connPassword || undefined,
       });
       toast(`Đã cập nhật thông tin kết nối cho ${connectionTarget.name}`);
       load();
@@ -193,9 +192,9 @@ export default function DataSourcesPage() {
           {warningSources.map((src) => (
             <div key={src.id}>
               <b>{src.name}:</b>{" "}
-              {src.rawStatus === "PAUSED"
-                ? `Lịch làm mới đã tự động tạm dừng (PAUSED) sau ${src.consecutiveFailures ?? 5} lần thất bại liên tiếp (BUS-DAT-11).`
-                : `Đã thất bại ${src.consecutiveFailures || 4} lần liên tiếp. Lịch sẽ tạm dừng sau lần thất bại tiếp theo (BUS-DAT-11).`}
+              {src.status === "Tạm dừng"
+                ? "Lịch làm mới đã tự động tạm dừng (PAUSED) sau 5 lần thất bại liên tiếp (BUS-DAT-11)."
+                : "Đã thất bại 4 lần liên tiếp. Lịch sẽ tạm dừng sau lần thất bại tiếp theo (BUS-DAT-11)."}
             </div>
           ))}
         </div>
@@ -308,8 +307,8 @@ export default function DataSourcesPage() {
             <Input
               aria-label="Giờ chạy"
               type="time"
-              value={timeOfDay}
-              onChange={(e) => setTimeOfDay(e.target.value)}
+              value={runTime}
+              onChange={(e) => setRunTime(e.target.value)}
             />
           </div>
           <div className="sm:col-span-2">
@@ -349,11 +348,11 @@ export default function DataSourcesPage() {
           </div>
           {refreshType === "INCREMENTAL" && (
             <div className="sm:col-span-2">
-              <Label required>Trường khóa tăng dần (Incremental Key)</Label>
+              <Label required>Trường khóa tăng dần (Incremental Column)</Label>
               <Input
                 aria-label="Trường khóa tăng dần"
-                value={incrementalKey}
-                onChange={(e) => setIncrementalKey(e.target.value)}
+                value={incrementalColumn}
+                onChange={(e) => setIncrementalColumn(e.target.value)}
                 placeholder="updated_at hoặc order_id"
               />
             </div>
@@ -389,8 +388,7 @@ export default function DataSourcesPage() {
                     {run.refreshType} · {run.status}
                   </span>
                   <span>
-                    {run.rowsProcessed.toLocaleString("vi-VN")} dòng (
-                    {run.durationMs} ms)
+                    {(run.rowsProcessed ?? 0).toLocaleString("vi-VN")} dòng
                   </span>
                 </div>
                 {run.errorMessage && (
@@ -409,8 +407,8 @@ export default function DataSourcesPage() {
         className="max-w-xl"
       >
         <div className="space-y-4">
-          {dependents.length > 0 && (
-            <Alert>
+          {(dependents ?? []).length > 0 && (
+            <div className="rounded-lg border border-primary-border bg-primary-tint p-4 text-sm text-foreground">
               <div>
                 <b>Cảnh báo ảnh hưởng ([5a]):</b> Có {dependents.length} workbook
                 đang phụ thuộc vào nguồn dữ liệu này:
@@ -422,7 +420,7 @@ export default function DataSourcesPage() {
                   ))}
                 </ul>
               </div>
-            </Alert>
+            </div>
           )}
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="sm:col-span-2">

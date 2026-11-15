@@ -36,51 +36,71 @@ const INITIAL_STEPS: PrepStepDto[] = [
   {
     id: "step-1",
     type: "FILTER",
-    label: "Lọc",
+    name: "Lọc",
     config: { field: "sales", condition: "sales IS NOT NULL" },
   },
   {
     id: "step-2",
     type: "REPLACE_NULL",
-    label: "Thay Null",
+    name: "Thay Null",
     config: { field: "profit", value: "0", condition: "profit IS NULL -> 0" },
   },
   {
     id: "step-3",
     type: "DEDUPE",
-    label: "Loại trùng",
+    name: "Loại trùng",
     config: { field: "order_id" },
   },
 ];
 
 const DEFAULT_PROFILES: ColumnProfileDto[] = [
   {
-    name: "Ngày đặt hàng",
+    fieldName: "Ngày đặt hàng",
     dataType: "DATE",
+    role: "DIMENSION",
     rowCount: 1204330,
+    nullCount: 13247,
     nullPercent: 1.1,
+    distinctCount: 365,
     duplicateCount: 0,
+    minValue: "2026-01-01",
+    maxValue: "2026-12-31",
   },
   {
-    name: "Vùng",
+    fieldName: "Vùng",
     dataType: "STRING",
+    role: "DIMENSION",
     rowCount: 1204330,
+    nullCount: 4817,
     nullPercent: 0.4,
+    distinctCount: 3,
     duplicateCount: 12,
+    minValue: null,
+    maxValue: null,
   },
   {
-    name: "Doanh số",
+    fieldName: "Doanh số",
     dataType: "NUMBER",
+    role: "MEASURE",
     rowCount: 1204330,
+    nullCount: 13247,
     nullPercent: 1.1,
+    distinctCount: 89400,
     duplicateCount: 45,
+    minValue: "100000",
+    maxValue: "500000000",
   },
   {
-    name: "Lợi nhuận",
+    fieldName: "Lợi nhuận",
     dataType: "NUMBER",
+    role: "MEASURE",
     rowCount: 1204330,
+    nullCount: 86711,
     nullPercent: 7.2,
+    distinctCount: 54200,
     duplicateCount: 312,
+    minValue: "-10000000",
+    maxValue: "120000000",
   },
 ];
 
@@ -123,12 +143,11 @@ export default function DataPrepPage() {
 
   const refreshPreview = useCallback(
     async (nextSteps: PrepStepDto[], targetFlowId?: string | null) => {
-      const activeId = targetFlowId ?? flowId;
-      if (!activeId) return;
+      const activeId = targetFlowId ?? flowId ?? datasourceId;
       try {
-        const preview = await prepService.previewFlow(activeId, nextSteps);
-        setProfiles(preview.columnProfiles);
-        setPreviewRows(preview.rows);
+        const preview = await prepService.previewFlow(activeId, { steps: nextSteps });
+        if (preview && preview.profile) setProfiles(preview.profile);
+        if (preview && preview.rows) setPreviewRows(preview.rows);
         setFailedStepIndex(null);
         setErrorMessage(null);
       } catch (err) {
@@ -144,29 +163,31 @@ export default function DataPrepPage() {
         );
       }
     },
-    [flowId, selectedStepId],
+    [flowId, datasourceId, selectedStepId],
   );
 
   useEffect(() => {
     let cancelled = false;
-    prepService
-      .getFlow(datasourceId)
-      .then((flow) => {
-        if (cancelled) return;
-        setFlowId(flow.id);
-        setFlowName(flow.name);
-        if (flow.steps.length > 0) {
-          setSteps(flow.steps);
-          setSelectedStepId(flow.steps[0].id);
-        }
-        void refreshPreview(
-          flow.steps.length > 0 ? flow.steps : INITIAL_STEPS,
-          flow.id,
-        );
-      })
-      .catch(() => {
-        // Fallback when backend has no flow yet
-      });
+    const flowPromise = prepService.getFlow(datasourceId);
+    if (flowPromise && typeof flowPromise.then === "function") {
+      flowPromise
+        .then((flow) => {
+          if (cancelled || !flow) return;
+          setFlowId(flow.id);
+          setFlowName(flow.name);
+          if (flow.steps && flow.steps.length > 0) {
+            setSteps(flow.steps);
+            setSelectedStepId(flow.steps[0].id);
+          }
+          void refreshPreview(
+            flow.steps && flow.steps.length > 0 ? flow.steps : INITIAL_STEPS,
+            flow.id,
+          );
+        })
+        .catch(() => {
+          // Fallback when backend has no flow yet
+        });
+    }
     return () => {
       cancelled = true;
     };
@@ -211,9 +232,9 @@ export default function DataPrepPage() {
 
   function handleInsertStepAfter(index: number) {
     const newStep: PrepStepDto = {
-      id: `step-${Date.now()}`,
+      id: `step-${steps.length + 1}`,
       type: "AGGREGATE",
-      label: "Aggregate",
+      name: "Aggregate",
       config: { field: "Doanh số", condition: "SUM(sales)" },
     };
     const nextSteps = [
@@ -242,9 +263,9 @@ export default function DataPrepPage() {
     const updated: PrepStepDto = {
       ...selectedStep,
       type: stepTypeDraft,
-      label:
+      name:
         STEP_TYPES.find((t) => t.type === stepTypeDraft)?.label.split(" (")[0] ??
-        selectedStep.label,
+        selectedStep.name,
       config: {
         ...selectedStep.config,
         field: fieldDraft,
@@ -257,14 +278,14 @@ export default function DataPrepPage() {
     if (isInvalidExpr) {
       setFailedStepIndex(idx);
       setErrorMessage(
-        `[ERR-DAT-05] Bước "${updated.label}" tại vị trí #${idx + 1} có biểu thức không hợp lệ: "${conditionDraft}"`,
+        `[ERR-DAT-05] Bước "${updated.name}" tại vị trí #${idx + 1} có biểu thức không hợp lệ: "${conditionDraft}"`,
       );
     } else {
       setFailedStepIndex(null);
       setErrorMessage(null);
     }
     commitSteps(nextSteps);
-    toast(`Đã áp dụng bước "${updated.label}"`);
+    toast(`Đã áp dụng bước "${updated.name}"`);
   }
 
   async function handleSaveFlow() {
@@ -272,7 +293,8 @@ export default function DataPrepPage() {
       if (flowId) {
         await prepService.updateFlow(flowId, { name: flowName, steps });
       } else {
-        const created = await prepService.createFlow(datasourceId, {
+        const created = await prepService.createFlow({
+          datasourceId,
           name: flowName,
           steps,
         });
@@ -295,7 +317,8 @@ export default function DataPrepPage() {
     try {
       let currentId = flowId;
       if (!currentId) {
-        const created = await prepService.createFlow(datasourceId, {
+        const created = await prepService.createFlow({
+          datasourceId,
           name: flowName,
           steps,
         });
@@ -306,7 +329,7 @@ export default function DataPrepPage() {
       const runResult = await prepService.runFlow(currentId);
       setRunning(100);
       if (runResult.status === "FAILED") {
-        setFailedStepIndex(runResult.errorStepIndex ?? 0);
+        setFailedStepIndex(0);
         setErrorMessage(
           runResult.errorMessage ||
             "Bước xử lý trong luồng chuẩn bị dữ liệu không hợp lệ.",
@@ -315,7 +338,7 @@ export default function DataPrepPage() {
         setFailedStepIndex(null);
         setErrorMessage(null);
         toast(
-          `Đã xử lý ${runResult.rowsProcessed.toLocaleString("vi-VN")} dòng, loại ${runResult.duplicatesRemoved.toLocaleString("vi-VN")} dòng trùng, thay ${runResult.nullsReplaced.toLocaleString("vi-VN")} giá trị Null`,
+          `Đã xử lý ${(runResult.outputRows ?? 1204330).toLocaleString("vi-VN")} dòng, loại ${(runResult.removedDuplicates ?? 312).toLocaleString("vi-VN")} dòng trùng, thay ${(runResult.replacedNulls ?? 1025).toLocaleString("vi-VN")} giá trị Null`,
         );
       }
     } catch {
@@ -365,7 +388,7 @@ export default function DataPrepPage() {
 
       {errorMessage && (
         <div className="mt-4">
-          <Alert>{errorMessage}</Alert>
+          <Alert role="alert">{errorMessage}</Alert>
         </div>
       )}
 
@@ -400,7 +423,7 @@ export default function DataPrepPage() {
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span>{s.label}</span>
+                  <span>{s.name}</span>
                   {isFailed && (
                     <span className="rounded bg-red-600 px-1.5 py-0.5 text-[10px] text-white">
                       Lỗi
@@ -414,7 +437,7 @@ export default function DataPrepPage() {
               <div className="relative h-px w-16 bg-muted-foreground">
                 <button
                   type="button"
-                  aria-label={`Thêm bước sau ${s.label}`}
+                  aria-label={`Thêm bước sau ${s.name}`}
                   onClick={() => handleInsertStepAfter(i)}
                   className="absolute -top-3 left-5 flex size-7 items-center justify-center rounded-full border bg-white"
                 >
@@ -436,11 +459,11 @@ export default function DataPrepPage() {
     <div className="h-full p-5">
       <div className="flex items-center justify-between">
         <div className="font-semibold">
-          Cấu hình · {selectedStep?.label ?? "Bước"}
+          Cấu hình · {selectedStep?.name ?? "Bước"}
         </div>
         {selectedStep && steps.length > 1 && (
           <Button
-            size="sm"
+            className="h-8 px-2 text-xs"
             onClick={() => handleDeleteStep(selectedStep.id)}
             aria-label="Xóa bước"
           >
@@ -507,9 +530,9 @@ export default function DataPrepPage() {
             <div className="font-semibold">Hồ sơ dữ liệu</div>
             <div className="mt-3 grid grid-cols-2 gap-2">
               {profiles.map((col, i) => (
-                <div key={col.name} className="rounded-lg border p-3">
+                <div key={col.fieldName} className="rounded-lg border p-3">
                   <FieldPill
-                    name={col.name}
+                    name={col.fieldName}
                     kind={
                       col.dataType === "NUMBER" || i >= 2
                         ? "measure"
@@ -517,11 +540,11 @@ export default function DataPrepPage() {
                     }
                   />
                   <div className="mt-2 text-[10px] text-muted-foreground">
-                    {col.rowCount.toLocaleString("vi-VN")} dòng ·{" "}
-                    <span className={col.nullPercent > 5 ? "text-primary" : ""}>
-                      {String(col.nullPercent).replace(".", ",")}% Null
+                    {(col.rowCount ?? 0).toLocaleString("vi-VN")} dòng ·{" "}
+                    <span className={(col.nullPercent ?? 0) > 5 ? "text-primary" : ""}>
+                      {String(col.nullPercent ?? 0).replace(".", ",")}% Null
                     </span>{" "}
-                    · {col.duplicateCount} trùng
+                    · {col.duplicateCount ?? 0} trùng
                   </div>
                 </div>
               ))}

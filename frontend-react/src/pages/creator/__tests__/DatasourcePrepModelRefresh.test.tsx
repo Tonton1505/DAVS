@@ -53,6 +53,29 @@ vi.mock("../../../services/prep.service", () => ({
 describe("Datasource, Prep, Model & Refresh (UC11, UC12, UC13, UC14)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(prepService.getFlow).mockResolvedValue({
+      id: "flow-1",
+      datasourceId: "ds-1",
+      outputDatasourceId: null,
+      name: "Luồng mẫu",
+      description: null,
+      steps: [],
+      lineage: [],
+      ownerId: "u1",
+      published: true,
+      createdAt: "2026-10-31T09:00:00Z",
+      updatedAt: "2026-10-31T09:00:00Z",
+    });
+    vi.mocked(prepService.previewFlow).mockResolvedValue({
+      stepIndex: 0,
+      inputRowCount: 100,
+      rowCount: 100,
+      duplicateRowCount: 0,
+      replacedNullsCount: 0,
+      profile: [],
+      lineage: [],
+      rows: [],
+    });
   });
 
   it("UC11: displays ERR-DAT-02 driver download link on missing driver and navigates to model on create", async () => {
@@ -85,16 +108,23 @@ describe("Datasource, Prep, Model & Refresh (UC11, UC12, UC13, UC14)", () => {
     vi.mocked(datasourceService.testConnection).mockResolvedValueOnce({
       success: true,
       message: "Kết nối thành công",
-      totalRowCount: 1500000,
-      suggestExtract: true,
-      recommendedMode: "EXTRACT",
-      tables: [{ name: "DonHang", schemaName: "public", rowCount: 1500000 }],
-      previewRows: [
+      estimatedRowCount: 1500000,
+      suggestedMode: "EXTRACT",
+      tables: [
         {
-          order_id: "DH-1",
-          order_date: "01/01/2026",
-          region: "Miền Bắc",
-          sales: 82000000,
+          tableName: "DonHang",
+          schemaName: "public",
+          rowCount: 1500000,
+          suggestedMode: "EXTRACT",
+          columns: [],
+          previewRows: [
+            {
+              order_id: "DH-1",
+              order_date: "01/01/2026",
+              region: "Miền Bắc",
+              sales: 82000000,
+            },
+          ],
         },
       ],
     });
@@ -102,14 +132,21 @@ describe("Datasource, Prep, Model & Refresh (UC11, UC12, UC13, UC14)", () => {
       id: "ds-999",
       projectId: "proj-1",
       name: "Doanh số_2026",
-      type: "POSTGRESQL",
+      description: null,
+      connectorType: "POSTGRESQL",
       mode: "EXTRACT",
+      suggestedMode: "EXTRACT",
       status: "CONNECTED",
-      consecutiveFailures: 0,
-      dependentWorkbooks: 0,
-      certified: false,
-      lastRefreshedAt: null,
       ownerId: "u1",
+      fileName: null,
+      rowCount: 1500000,
+      certified: false,
+      qualityWarning: null,
+      sensitivity: null,
+      dependentWorkbooksCount: 0,
+      connection: null,
+      schedule: null,
+      lastRefreshedAt: null,
       createdAt: "2026-10-31T09:00:00Z",
       updatedAt: "2026-10-31T09:00:00Z",
     });
@@ -187,13 +224,38 @@ describe("Datasource, Prep, Model & Refresh (UC11, UC12, UC13, UC14)", () => {
   });
 
   it("UC14: shows failure warning banner (BUS-DAT-11) and lists dependent workbooks before editing connection ([5a])", async () => {
-    vi.mocked(datasourceService.list).mockRejectedValueOnce(new Error("offline"));
+    vi.mocked(datasourceService.list).mockResolvedValueOnce([
+      {
+        id: "ds-1",
+        name: "Doanh số_2026",
+        description: null,
+        connectorType: "POSTGRESQL",
+        mode: "EXTRACT",
+        suggestedMode: "EXTRACT",
+        status: "FAILED",
+        ownerId: "u1",
+        projectId: "proj-1",
+        fileName: null,
+        rowCount: 1204330,
+        certified: true,
+        qualityWarning: null,
+        sensitivity: null,
+        dependentWorkbooksCount: 1,
+        connection: null,
+        schedule: null,
+        lastRefreshedAt: "2026-10-31T09:00:00Z",
+        createdAt: "2026-10-31T09:00:00Z",
+        updatedAt: "2026-10-31T09:00:00Z",
+      },
+    ]);
     vi.mocked(datasourceService.listDependents).mockResolvedValueOnce([
       {
         id: "wb-10",
         name: "Workbook Doanh thu Chiến lược",
         status: "PUBLISHED",
+        projectId: "proj-1",
         ownerId: "u1",
+        updatedAt: "2026-10-31T09:00:00Z",
       },
     ]);
 

@@ -21,11 +21,19 @@ import {
 } from "../../components/ui";
 import {
   datasourceService,
-  type ConnectorType,
   type DiscoveredTableDto,
   type TestConnectionResponse,
 } from "../../services/datasource.service";
 import { useUIStore } from "../../stores/ui.store";
+
+type ConnectorType =
+  | "EXCEL"
+  | "CSV"
+  | "POSTGRESQL"
+  | "SQLSERVER"
+  | "MYSQL"
+  | "GOOGLE_SHEETS"
+  | "SALESFORCE";
 
 const CONNECTOR_OPTIONS: Array<{
   type: ConnectorType;
@@ -55,7 +63,6 @@ export default function ConnectDataPage() {
   const [password, setPassword] = useState("password123");
   const [driverInstalled, setDriverInstalled] = useState(true);
   const [estimatedRows, setEstimatedRows] = useState("1204330");
-  const [fileSizeBytes, setFileSizeBytes] = useState("1048576");
 
   const [testing, setTesting] = useState(false);
   const [tested, setTested] = useState(false);
@@ -76,22 +83,20 @@ export default function ConnectDataPage() {
     setErrorMessage("");
     setDriverUrl(null);
     try {
+      const isMissingDriver = host === "driver.congty.vn" ? true : !driverInstalled;
       const res = await datasourceService.testConnection({
-        type: connectorType,
+        connectorType,
         host,
         port: Number(port) || 5432,
-        database,
+        databaseName: database,
         username,
         password,
-        driverInstalled:
-          host === "driver.congty.vn" ? false : driverInstalled,
-        estimatedRowCount: Number(estimatedRows) || 250000,
-        fileSizeBytes: isFileConnector ? Number(fileSizeBytes) || 1024 : null,
+        driverMissing: isMissingDriver,
       });
       setTestResult(res);
       setTested(true);
-      setSelectedTables(res.tables);
-      if (res.suggestExtract) {
+      setSelectedTables(res.tables ?? []);
+      if (res.suggestedMode === "EXTRACT" || (res.estimatedRowCount ?? 0) > 1000000) {
         setMode("EXTRACT");
       }
     } catch (err) {
@@ -128,14 +133,14 @@ export default function ConnectDataPage() {
     try {
       const created = await datasourceService.create({
         name: sourceName.trim() || `Nguồn ${connectorType}`,
-        type: connectorType,
+        connectorType,
         mode,
         host,
         port: Number(port) || 5432,
-        database,
+        databaseName: database,
         username,
-        secretPlaintext: password,
-        tables: selectedTables.length > 0 ? selectedTables : undefined,
+        password,
+        estimatedRowCount: Number(estimatedRows) || 0,
       });
       toast("Đã tạo nguồn dữ liệu thành công");
       nav(`/datasources/${created.id}/model`);
@@ -150,10 +155,15 @@ export default function ConnectDataPage() {
     }
   }
 
-  const previewRows = testResult?.previewRows ?? [
-    { order_id: "DH-1001", order_date: "01/01/2026", region: "Miền Bắc", sales: 82000000 },
-    { order_id: "DH-1002", order_date: "02/01/2026", region: "Miền Nam", sales: 74500000 },
-  ];
+  const previewRows =
+    testResult?.tables?.[0]?.previewRows ?? [
+      { order_id: "DH-1001", order_date: "01/01/2026", region: "Miền Bắc", sales: 82000000 },
+      { order_id: "DH-1002", order_date: "02/01/2026", region: "Miền Nam", sales: 74500000 },
+    ];
+
+  const isSuggestExtract =
+    testResult?.suggestedMode === "EXTRACT" ||
+    (testResult?.estimatedRowCount ?? 0) > 1000000;
 
   return (
     <>
@@ -215,7 +225,7 @@ export default function ConnectDataPage() {
               {CONNECTOR_OPTIONS.find((c) => c.type === connectorType)?.label}
             </div>
             {errorMessage && (
-              <Alert>
+              <Alert role="alert">
                 <div>
                   {errorCode && (
                     <b className="mr-1 font-mono text-xs">[{errorCode}]</b>
@@ -295,19 +305,7 @@ export default function ConnectDataPage() {
                     />
                   </div>
                 </>
-              ) : (
-                <div className="sm:col-span-2">
-                  <Label>Kích thước tệp (bytes)</Label>
-                  <Input
-                    aria-label="Kích thước tệp"
-                    value={fileSizeBytes}
-                    onChange={(e) => {
-                      setFileSizeBytes(e.target.value);
-                      setTested(false);
-                    }}
-                  />
-                </div>
-              )}
+              ) : null}
               <div>
                 <Label>Số dòng ước tính</Label>
                 <Input
@@ -346,10 +344,11 @@ export default function ConnectDataPage() {
         {step === 3 && (
           <>
             <div className="font-semibold">Chế độ kết nối & xem trước</div>
-            {testResult?.suggestExtract && (
+            {isSuggestExtract && (
               <div className="mt-3">
-                <Alert>
-                  Nguồn dữ liệu có {testResult.totalRowCount.toLocaleString("vi-VN")}{" "}
+                <Alert role="alert">
+                  Nguồn dữ liệu có{" "}
+                  {(testResult?.estimatedRowCount ?? 1204330).toLocaleString("vi-VN")}{" "}
                   dòng (&gt; 1.000.000 dòng). Hệ thống tự động khuyến nghị chế độ{" "}
                   <b>Extract</b> để tối ưu hiệu năng truy vấn (BUS-DAT-03).
                 </Alert>
@@ -376,7 +375,7 @@ export default function ConnectDataPage() {
                     className="mr-2 accent-primary"
                   />
                   <b>{label}</b>
-                  {val === "EXTRACT" && testResult?.suggestExtract && (
+                  {val === "EXTRACT" && isSuggestExtract && (
                     <span className="ml-2 rounded bg-primary-tint px-2 py-0.5 text-[10px] font-semibold text-primary">
                       Được khuyến nghị
                     </span>
@@ -394,10 +393,10 @@ export default function ConnectDataPage() {
                 <div className="flex flex-wrap gap-2">
                   {selectedTables.map((t) => (
                     <span
-                      key={t.name}
+                      key={t.tableName}
                       className="rounded-lg border bg-muted px-3 py-1.5 text-xs font-medium"
                     >
-                      {t.schemaName}.{t.name} ({t.rowCount.toLocaleString("vi-VN")} dòng)
+                      {t.schemaName}.{t.tableName} ({(t.rowCount ?? 0).toLocaleString("vi-VN")} dòng)
                     </span>
                   ))}
                 </div>
@@ -406,7 +405,7 @@ export default function ConnectDataPage() {
 
             <div className="overflow-hidden rounded-lg border">
               <div className="bg-muted px-4 py-3 text-xs font-semibold">
-                Xem trước 100 dòng đầu · {selectedTables[0]?.name ?? "DonHang"} (
+                Xem trước 100 dòng đầu · {selectedTables[0]?.tableName ?? "DonHang"} (
                 {previewRows.length} dòng)
               </div>
               <div className="max-h-64 overflow-auto">

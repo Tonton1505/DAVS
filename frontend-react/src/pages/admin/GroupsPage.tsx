@@ -24,7 +24,7 @@ const FALLBACK_GROUPS: GroupDto[] = [
     name: "All Users",
     description: "System default group containing all active users",
     minRole: null,
-    system: true,
+    isSystem: true,
     memberCount: 5,
     createdAt: "2026-10-01T09:00:00Z",
     updatedAt: "2026-10-31T09:20:00Z",
@@ -34,7 +34,7 @@ const FALLBACK_GROUPS: GroupDto[] = [
     name: "Phòng Kinh doanh",
     description: "Nhóm người dùng Công ty ABC",
     minRole: "VIEWER",
-    system: false,
+    isSystem: false,
     memberCount: 32,
     createdAt: "2026-10-01T09:00:00Z",
     updatedAt: "2026-10-31T09:20:00Z",
@@ -44,7 +44,7 @@ const FALLBACK_GROUPS: GroupDto[] = [
     name: "Phòng Tài chính",
     description: "Nhóm phân tích tài chính",
     minRole: "EXPLORER",
-    system: false,
+    isSystem: false,
     memberCount: 18,
     createdAt: "2026-10-01T09:00:00Z",
     updatedAt: "2026-10-31T09:20:00Z",
@@ -76,7 +76,13 @@ export default function GroupsPage() {
   }, []);
 
   useEffect(() => {
-    void loadGroups();
+    let cancelled = false;
+    Promise.resolve().then(async () => {
+      if (!cancelled) await loadGroups();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [loadGroups]);
 
   async function openMembersModal(group: GroupDto) {
@@ -96,13 +102,8 @@ export default function GroupsPage() {
   async function handleAddMember(userId: string) {
     if (!memberModalGroup) return;
     try {
-      const res = await groupService.addMembers(memberModalGroup.id, [userId]);
-      toast(
-        res.promotedCount > 0
-          ? `Đã thêm thành viên · Tự động nâng vai trò cho ${res.promotedCount} người`
-          : "Đã thêm thành viên vào nhóm",
-      );
-      const refreshed = await groupService.getDetail(memberModalGroup.id);
+      const refreshed = await groupService.addMembers(memberModalGroup.id, [userId]);
+      toast("Đã thêm thành viên vào nhóm");
       setMemberModalGroup(refreshed);
       await loadGroups();
     } catch (err) {
@@ -115,7 +116,7 @@ export default function GroupsPage() {
   async function handleRemoveMember(userId: string) {
     if (!memberModalGroup) return;
     if (
-      memberModalGroup.system ||
+      memberModalGroup.isSystem ||
       memberModalGroup.name.toLowerCase() === "all users"
     ) {
       setErrorMessage(
@@ -124,9 +125,8 @@ export default function GroupsPage() {
       return;
     }
     try {
-      await groupService.removeMember(memberModalGroup.id, userId);
+      const refreshed = await groupService.removeMember(memberModalGroup.id, userId);
       toast("Đã gỡ thành viên khỏi nhóm");
-      const refreshed = await groupService.getDetail(memberModalGroup.id);
       setMemberModalGroup(refreshed);
       await loadGroups();
     } catch (err) {
@@ -137,7 +137,7 @@ export default function GroupsPage() {
   }
 
   async function handleDeleteGroup(group: GroupDto) {
-    if (group.system || group.name.toLowerCase() === "all users") {
+    if (group.isSystem || group.name.toLowerCase() === "all users") {
       setErrorMessage("Không thể xóa nhóm hệ thống 'All Users' (BUS-GRP-02).");
       return;
     }
@@ -190,7 +190,7 @@ export default function GroupsPage() {
         count={groups.length}
       >
         {groups.map((x) => {
-          const isAllUsers = x.system || x.name.toLowerCase() === "all users";
+          const isAllUsers = x.isSystem || x.name.toLowerCase() === "all users";
           return (
             <tr key={x.id}>
               <Td>
@@ -214,7 +214,7 @@ export default function GroupsPage() {
               <Td>
                 <div className="flex items-center gap-1">
                   <Button
-                    size="sm"
+                    className="h-8 px-2 text-xs"
                     onClick={() => void openMembersModal(x)}
                     aria-label={`Thành viên ${x.name}`}
                   >
@@ -222,7 +222,7 @@ export default function GroupsPage() {
                     Thành viên
                   </Button>
                   <Button
-                    size="sm"
+                    className="h-8 px-2 text-xs"
                     onClick={() => {
                       setEditingGroup(x);
                       setDialogOpen(true);
@@ -232,7 +232,7 @@ export default function GroupsPage() {
                     <Edit2 className="size-3.5" />
                   </Button>
                   <Button
-                    size="sm"
+                    className="h-8 px-2 text-xs"
                     disabled={isAllUsers}
                     title={
                       isAllUsers
@@ -281,8 +281,8 @@ export default function GroupsPage() {
                       u.email.toLowerCase().includes(userSearch.toLowerCase()),
                   )
                   .map((u) => {
-                    const alreadyMember = memberModalGroup.members.some(
-                      (m) => m.id === u.id,
+                    const alreadyMember = (memberModalGroup.members ?? []).some(
+                      (m) => m.userId === u.id,
                     );
                     return (
                       <div
@@ -290,10 +290,10 @@ export default function GroupsPage() {
                         className="flex items-center justify-between py-1"
                       >
                         <span>
-                          {u.fullName} ({u.email}) · {u.role}
+                          {u.fullName} ({u.email}) · {u.siteRole}
                         </span>
                         <Button
-                          size="sm"
+                          className="h-7 px-2 text-xs"
                           disabled={alreadyMember}
                           onClick={() => void handleAddMember(u.id)}
                         >
@@ -307,28 +307,28 @@ export default function GroupsPage() {
 
             <div>
               <div className="mb-2 text-xs font-semibold">
-                Danh sách thành viên hiện tại ({memberModalGroup.members.length})
+                Danh sách thành viên hiện tại ({(memberModalGroup.members ?? []).length})
               </div>
               <div className="max-h-48 divide-y overflow-y-auto rounded-lg border text-xs">
-                {memberModalGroup.members.map((m) => {
+                {(memberModalGroup.members ?? []).map((m) => {
                   const isAllUsers =
-                    memberModalGroup.system ||
+                    memberModalGroup.isSystem ||
                     memberModalGroup.name.toLowerCase() === "all users";
                   return (
                     <div
-                      key={m.id}
+                      key={m.userId}
                       className="flex items-center justify-between p-2.5"
                     >
                       <div>
                         <div className="font-medium">{m.fullName}</div>
                         <div className="text-muted-foreground">
-                          {m.email} · {m.role}
+                          {m.email} · {m.siteRole}
                         </div>
                       </div>
                       <Button
-                        size="sm"
+                        className="h-7 px-2 text-xs"
                         disabled={isAllUsers}
-                        onClick={() => void handleRemoveMember(m.id)}
+                        onClick={() => void handleRemoveMember(m.userId)}
                       >
                         {isAllUsers ? "Mặc định" : "Gỡ"}
                       </Button>

@@ -92,12 +92,20 @@ export const userService = {
     return data;
   },
 
+  async updateUserRole(userId: string, role: BackendSiteRole): Promise<UserManagementDto> {
+    return this.changeRole(userId, role);
+  },
+
   async batchChangeRole(userIds: string[], role: BackendSiteRole): Promise<UserManagementDto[]> {
     const { data } = await client.patch<UserManagementDto[]>("/v1/users/batch-role", {
       userIds,
       role,
     });
     return data;
+  },
+
+  async batchUpdateRole(userIds: string[], role: BackendSiteRole): Promise<UserManagementDto[]> {
+    return this.batchChangeRole(userIds, role);
   },
 
   async deactivateUser(userId: string): Promise<UserManagementDto> {

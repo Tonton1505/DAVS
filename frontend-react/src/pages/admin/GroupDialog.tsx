@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Alert, Button, Dialog, Input, Label, Select, Textarea } from "../../components/ui";
+import type { BackendSiteRole } from "../../services/auth.service";
 import {
   groupService,
   type GroupDto,
-  type GroupMinRole,
 } from "../../services/group.service";
 import { userService, type UserManagementDto } from "../../services/user.service";
 import { useUIStore } from "../../stores/ui.store";
@@ -12,8 +12,16 @@ const ROLE_WEIGHT: Record<string, number> = {
   VIEWER: 1,
   EXPLORER: 2,
   CREATOR: 3,
+  SITE_ADMIN: 4,
   ADMIN: 4,
 };
+
+interface DialogMember {
+  id: string;
+  email: string;
+  fullName: string;
+  siteRole: BackendSiteRole;
+}
 
 export default function GroupDialog({
   open,
@@ -28,43 +36,50 @@ export default function GroupDialog({
 }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [minRole, setMinRole] = useState<GroupMinRole | "">("");
+  const [minRole, setMinRole] = useState<BackendSiteRole | "">("");
   const [searchQuery, setSearchQuery] = useState("");
   const [availableUsers, setAvailableUsers] = useState<UserManagementDto[]>([]);
-  const [selectedUsers, setSelectedUsers] = useState<UserManagementDto[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<DialogMember[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const toast = useUIStore((s) => s.toast);
 
   useEffect(() => {
     if (!open) return;
-    setErrorMessage(null);
-    if (editingGroup) {
-      setName(editingGroup.name);
-      setDescription(editingGroup.description ?? "");
-      setMinRole(editingGroup.minRole ?? "");
-      groupService
-        .getDetail(editingGroup.id)
-        .then((detail) => {
-          setSelectedUsers(
-            detail.members.map((m) => ({
-              id: m.id,
-              email: m.email,
-              fullName: m.fullName,
-              role: m.role as UserManagementDto["role"],
-              status: m.status as UserManagementDto["status"],
-              lastLoginAt: null,
-              createdAt: m.joinedAt,
-            })),
-          );
-        })
-        .catch(() => setSelectedUsers([]));
-    } else {
-      setName("");
-      setDescription("");
-      setMinRole("VIEWER");
-      setSelectedUsers([]);
-    }
+    let cancelled = false;
+    Promise.resolve().then(() => {
+      if (cancelled) return;
+      setErrorMessage(null);
+      if (editingGroup) {
+        setName(editingGroup.name);
+        setDescription(editingGroup.description ?? "");
+        setMinRole(editingGroup.minRole ?? "");
+        groupService
+          .getDetail(editingGroup.id)
+          .then((detail) => {
+            if (cancelled) return;
+            setSelectedUsers(
+              detail.members.map((m) => ({
+                id: m.userId,
+                email: m.email,
+                fullName: m.fullName,
+                siteRole: m.siteRole,
+              })),
+            );
+          })
+          .catch(() => {
+            if (!cancelled) setSelectedUsers([]);
+          });
+      } else {
+        setName("");
+        setDescription("");
+        setMinRole("VIEWER");
+        setSelectedUsers([]);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [open, editingGroup]);
 
   useEffect(() => {
@@ -88,13 +103,21 @@ export default function GroupDialog({
 
   const promotedCount = minRole
     ? selectedUsers.filter(
-        (u) => (ROLE_WEIGHT[u.role] ?? 1) < (ROLE_WEIGHT[minRole] ?? 1),
+        (u) => (ROLE_WEIGHT[u.siteRole] ?? 1) < (ROLE_WEIGHT[minRole] ?? 1),
       ).length
     : 0;
 
   function addMemberChip(user: UserManagementDto) {
     if (selectedUsers.some((u) => u.id === user.id)) return;
-    setSelectedUsers((prev) => [...prev, user]);
+    setSelectedUsers((prev) => [
+      ...prev,
+      {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        siteRole: user.siteRole,
+      },
+    ]);
   }
 
   function removeMemberChip(userId: string) {
@@ -111,26 +134,26 @@ export default function GroupDialog({
     try {
       const normalizedMinRole = minRole === "" ? null : minRole;
       if (editingGroup) {
-        const res = await groupService.update(editingGroup.id, {
+        await groupService.update(editingGroup.id, {
           name: trimmedName,
-          description: description.trim() || null,
+          description: description.trim() || undefined,
           minRole: normalizedMinRole,
         });
         toast(
-          res.promotedCount > 0
-            ? `Đã cập nhật nhóm · Tự động nâng vai trò cho ${res.promotedCount} thành viên`
+          promotedCount > 0
+            ? `Đã cập nhật nhóm · Tự động nâng vai trò cho ${promotedCount} thành viên`
             : "Đã cập nhật nhóm",
         );
       } else {
-        const res = await groupService.create({
+        await groupService.create({
           name: trimmedName,
-          description: description.trim() || null,
+          description: description.trim() || undefined,
           minRole: normalizedMinRole,
-          memberIds: selectedUsers.map((u) => u.id),
+          userIds: selectedUsers.map((u) => u.id),
         });
         toast(
-          res.promotedCount > 0
-            ? `Đã tạo nhóm · Tự động nâng vai trò cho ${res.promotedCount} thành viên`
+          promotedCount > 0
+            ? `Đã tạo nhóm · Tự động nâng vai trò cho ${promotedCount} thành viên`
             : "Đã tạo nhóm",
         );
       }
@@ -159,7 +182,7 @@ export default function GroupDialog({
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={100}
-            disabled={editingGroup?.system}
+            disabled={editingGroup?.isSystem}
             placeholder="Nhập tên nhóm (3–100 ký tự)"
           />
           <div className="flex justify-between text-xs text-muted-foreground">
@@ -186,7 +209,7 @@ export default function GroupDialog({
             aria-label="Vai trò tối thiểu"
             className="w-full"
             value={minRole}
-            onChange={(e) => setMinRole(e.target.value as GroupMinRole | "")}
+            onChange={(e) => setMinRole(e.target.value as BackendSiteRole | "")}
           >
             <option value="">Không áp dụng</option>
             <option value="VIEWER">Viewer</option>
@@ -213,10 +236,10 @@ export default function GroupDialog({
                       className="flex items-center justify-between py-1"
                     >
                       <span>
-                        {u.fullName} ({u.email}) · {u.role}
+                        {u.fullName} ({u.email}) · {u.siteRole}
                       </span>
                       <Button
-                        size="sm"
+                        className="h-7 px-2 text-xs"
                         disabled={chosen}
                         onClick={() => addMemberChip(u)}
                       >
@@ -235,7 +258,7 @@ export default function GroupDialog({
                   onClick={() => removeMemberChip(u.id)}
                   className="rounded-full bg-muted px-3 py-1 text-xs"
                 >
-                  {u.fullName} ({u.role}) ×
+                  {u.fullName} ({u.siteRole}) ×
                 </button>
               ))}
             </div>

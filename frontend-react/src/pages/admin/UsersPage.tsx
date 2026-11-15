@@ -83,8 +83,20 @@ export default function UsersPage() {
   }, [q, roleFilter, statusFilter, page]);
 
   useEffect(() => {
-    void loadData();
+    let cancelled = false;
+    Promise.resolve().then(async () => {
+      if (!cancelled) await loadData();
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [loadData]);
+
+  const isRoleDisabled = (targetRole: BackendSiteRole, currentRole?: BackendSiteRole) => {
+    if (currentRole && targetRole === currentRole) return false;
+    const pool = licenses.find((l) => l.role === targetRole);
+    return pool ? pool.available <= 0 : false;
+  };
 
   const eligibleOwners = useMemo(() => {
     return users.filter(
@@ -344,15 +356,23 @@ export default function UsersPage() {
                 onChange={(e) => handleRoleChange(x.id, e.target.value as BackendSiteRole)}
                 className="h-8 text-xs"
               >
-                <option value="VIEWER">Viewer</option>
-                <option value="EXPLORER">Explorer</option>
-                <option value="CREATOR">Creator</option>
-                <option value="SITE_ADMIN">Quản trị viên</option>
+                <option value="VIEWER" disabled={isRoleDisabled("VIEWER", x.siteRole)}>
+                  Viewer
+                </option>
+                <option value="EXPLORER" disabled={isRoleDisabled("EXPLORER", x.siteRole)}>
+                  Explorer
+                </option>
+                <option value="CREATOR" disabled={isRoleDisabled("CREATOR", x.siteRole)}>
+                  Creator
+                </option>
+                <option value="SITE_ADMIN" disabled={isRoleDisabled("SITE_ADMIN", x.siteRole)}>
+                  Quản trị viên
+                </option>
               </Select>
             </Td>
             <Td>
               <div className="flex flex-wrap gap-1">
-                {x.groups.map((g) => (
+                {(x.groups ?? []).map((g) => (
                   <Badge key={g}>{g}</Badge>
                 ))}
               </div>
