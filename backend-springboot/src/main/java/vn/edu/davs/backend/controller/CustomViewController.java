@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -63,7 +64,7 @@ public class CustomViewController {
     }
 
     @Operation(summary = "Update sharing status of custom view")
-    @PostMapping("/custom-views/{id}/share")
+    @RequestMapping(value = "/custom-views/{id}/share", method = {RequestMethod.POST, RequestMethod.PUT})
     public ResponseEntity<Map<String, String>> setShared(
             @PathVariable UUID id,
             @RequestParam(defaultValue = "true") boolean shared,
@@ -84,7 +85,7 @@ public class CustomViewController {
     }
 
     @Operation(summary = "Save copy of workbook into target project (ad-hoc save-as)")
-    @PostMapping("/workbooks/save-as")
+    @PostMapping({"/workbooks/save-as", "/dashboards/{id}/save-as", "/dashboards/save-as"})
     public ResponseEntity<WorkbookDto> saveAsWorkbook(
             @Valid @RequestBody SaveAsWorkbookRequest request,
             @AuthenticationPrincipal DavsUser actor

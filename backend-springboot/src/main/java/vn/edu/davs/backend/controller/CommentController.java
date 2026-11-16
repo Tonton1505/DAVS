@@ -18,11 +18,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "UC24 - Comments & Threaded Discussions", description = "Comment threads, replies, mentions and snapshot attachments")
@@ -34,28 +34,30 @@ public class CommentController {
     private final CommentService commentService;
 
     @Operation(summary = "List comment threads on resource (dashboard or workbook)")
-    @GetMapping("/resources/{type}/{id}/comments")
+    @GetMapping({"/resources/{type}/{id}/comments", "/dashboards/{id}/comments"})
     public ResponseEntity<List<CommentDto>> listComments(
-            @PathVariable String type,
+            @PathVariable(required = false) String type,
             @PathVariable UUID id,
             @AuthenticationPrincipal DavsUser actor
     ) {
-        return ResponseEntity.ok(commentService.listComments(type, id, actor));
+        String resType = type != null ? type : "DASHBOARD";
+        return ResponseEntity.ok(commentService.listComments(resType, id, actor));
     }
 
     @Operation(summary = "Post a comment on resource")
-    @PostMapping("/resources/{type}/{id}/comments")
+    @PostMapping({"/resources/{type}/{id}/comments", "/dashboards/{id}/comments"})
     public ResponseEntity<CommentDto> createComment(
-            @PathVariable String type,
+            @PathVariable(required = false) String type,
             @PathVariable UUID id,
             @Valid @RequestBody CreateCommentRequest request,
             @AuthenticationPrincipal DavsUser actor
     ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(commentService.createComment(type, id, request, actor));
+        String resType = type != null ? type : "DASHBOARD";
+        return ResponseEntity.status(HttpStatus.CREATED).body(commentService.createComment(resType, id, request, actor));
     }
 
     @Operation(summary = "Update comment text (author only, within 24 hours)")
-    @PatchMapping("/comments/{id}")
+    @RequestMapping(value = "/comments/{id}", method = {RequestMethod.PATCH, RequestMethod.PUT})
     public ResponseEntity<Map<String, String>> updateComment(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateCommentRequest request,

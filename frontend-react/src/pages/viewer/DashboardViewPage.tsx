@@ -55,8 +55,8 @@ const products = [
 const DEFAULT_DASHBOARD_ID = "00000000-0000-0000-0000-000000000501";
 
 export default function DashboardViewPage() {
-  const { id } = useParams<{ id: string }>();
-  const activeDashboardId = id || DEFAULT_DASHBOARD_ID;
+  const params = useParams<{ id?: string; dashboardId?: string }>();
+  const activeDashboardId = params.dashboardId || params.id || DEFAULT_DASHBOARD_ID;
 
   const nav = useNavigate();
   const role = useAuthStore((s) => s.role);

@@ -80,6 +80,7 @@ const router = createBrowserRouter([
           { path: "projects/:id", Component: ProjectsPage },
           { path: "projects/:id/permissions", Component: ProjectPermissionsPage },
           { path: "dashboards/:id", Component: DashboardViewPage },
+          { path: "view/:dashboardId", Component: DashboardViewPage },
           { path: "dashboards/:id/design", Component: DashboardDesignerPage },
           { path: "explore", Component: ExplorePage },
           { path: "explore/:sourceId", Component: AdHocAnalysisPage },
