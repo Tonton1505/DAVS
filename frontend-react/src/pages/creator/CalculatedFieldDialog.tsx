@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import {
   Button,
@@ -36,10 +36,17 @@ export default function CalculatedFieldDialog({
   const [fieldName, setFieldName] = useState("Tỷ suất lợi nhuận");
   const [formula, setFormula] = useState("SUM([Doanh số]) / SUM([Lợi nhuận])");
   const [returnType, setReturnType] = useState("FLOAT");
-  const [fieldValid, setFieldValid] = useState(true);
-  const [fieldErrorMessage, setFieldErrorMessage] = useState<string | null>(null);
+  const isFormulaEmpty = !formula.trim();
+  const [asyncFieldValid, setAsyncFieldValid] = useState(true);
+  const [asyncFieldErrorMessage, setAsyncFieldErrorMessage] = useState<string | null>(null);
   const [errorPos, setErrorPos] = useState<number | null>(null);
   const [validating, setValidating] = useState(false);
+
+  // Derived field validation state
+  const fieldValid = !isFormulaEmpty && asyncFieldValid;
+  const fieldErrorMessage = isFormulaEmpty
+    ? "ERR-VIZ-01: Công thức không được để trống"
+    : asyncFieldErrorMessage;
 
   // Parameter states
   const [paramName, setParamName] = useState("Top N");
@@ -50,19 +57,56 @@ export default function CalculatedFieldDialog({
   const [rangeStep, setRangeStep] = useState("1");
   const [listValues, setListValues] = useState("5, 10, 20, 50");
   const [paramCurrentValue, setParamCurrentValue] = useState("10");
-  const [paramValid, setParamValid] = useState(true);
-  const [paramError, setParamError] = useState<string | null>(null);
+
+  // Derived parameter validation state
+  const { paramValid, paramError } = useMemo(() => {
+    if (!paramCurrentValue.trim()) {
+      return {
+        paramValid: false,
+        paramError: "ERR-VIZ-02: Vui lòng nhập giá trị hiện tại của tham số.",
+      };
+    }
+
+    if (allowableType === "RANGE") {
+      const min = parseFloat(rangeMin);
+      const max = parseFloat(rangeMax);
+      const curr = parseFloat(paramCurrentValue);
+
+      if (isNaN(curr) || isNaN(min) || isNaN(max)) {
+        return {
+          paramValid: false,
+          paramError: "ERR-VIZ-02: Giá trị tham số và giới hạn phải là số hợp lệ.",
+        };
+      }
+      if (curr < min || curr > max) {
+        return {
+          paramValid: false,
+          paramError: `ERR-VIZ-02: Giá trị ${curr} nằm ngoài phạm vi cho phép [${min}, ${max}].`,
+        };
+      }
+      return { paramValid: true, paramError: null };
+    }
+
+    if (allowableType === "LIST") {
+      const allowedList = listValues
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (allowedList.length > 0 && !allowedList.includes(paramCurrentValue.trim())) {
+        return {
+          paramValid: false,
+          paramError: `ERR-VIZ-02: Giá trị "${paramCurrentValue}" không nằm trong danh sách giá trị cho phép.`,
+        };
+      }
+      return { paramValid: true, paramError: null };
+    }
+
+    return { paramValid: true, paramError: null };
+  }, [paramCurrentValue, rangeMin, rangeMax, listValues, allowableType]);
 
   // Validate formula whenever it changes (with debounce)
   useEffect(() => {
-    if (!open || activeTab !== "field") return;
-
-    if (!formula.trim()) {
-      setFieldValid(false);
-      setFieldErrorMessage("ERR-VIZ-01: Công thức không được để trống");
-      setErrorPos(null);
-      return;
-    }
+    if (!open || activeTab !== "field" || !formula.trim()) return;
 
     const timer = setTimeout(async () => {
       setValidating(true);
@@ -73,13 +117,13 @@ export default function CalculatedFieldDialog({
           currentFieldName: fieldName,
         });
         if (res.valid) {
-          setFieldValid(true);
-          setFieldErrorMessage(null);
+          setAsyncFieldValid(true);
+          setAsyncFieldErrorMessage(null);
           setErrorPos(null);
         } else {
-          setFieldValid(false);
+          setAsyncFieldValid(false);
           const posText = res.errorPosition != null ? ` tại vị trí ${res.errorPosition}` : "";
-          setFieldErrorMessage(
+          setAsyncFieldErrorMessage(
             `${res.errorCode || "ERR-VIZ-01"}: ${res.errorMessage || "Công thức sai cú pháp"}${posText}`,
           );
           setErrorPos(res.errorPosition ?? null);
@@ -92,16 +136,21 @@ export default function CalculatedFieldDialog({
         const closeParens = (formula.match(/\)/g) || []).length;
 
         if (openBrackets !== closeBrackets || openParens !== closeParens) {
-          setFieldValid(false);
-          setFieldErrorMessage("ERR-VIZ-01: Công thức thiếu ngoặc đóng/mở");
+          setAsyncFieldValid(false);
+          setAsyncFieldErrorMessage("ERR-VIZ-01: Công thức thiếu ngoặc đóng/mở");
           setErrorPos(formula.length);
-        } else if (formula.trim().endsWith("/") || formula.trim().endsWith("+") || formula.trim().endsWith("-") || formula.trim().endsWith("*")) {
-          setFieldValid(false);
-          setFieldErrorMessage("ERR-VIZ-01: Công thức kết thúc bằng toán tử thiếu toán hạng");
+        } else if (
+          formula.trim().endsWith("/") ||
+          formula.trim().endsWith("+") ||
+          formula.trim().endsWith("-") ||
+          formula.trim().endsWith("*")
+        ) {
+          setAsyncFieldValid(false);
+          setAsyncFieldErrorMessage("ERR-VIZ-01: Công thức kết thúc bằng toán tử thiếu toán hạng");
           setErrorPos(formula.length);
         } else {
-          setFieldValid(true);
-          setFieldErrorMessage(null);
+          setAsyncFieldValid(true);
+          setAsyncFieldErrorMessage(null);
           setErrorPos(null);
         }
       } finally {
@@ -111,53 +160,6 @@ export default function CalculatedFieldDialog({
 
     return () => clearTimeout(timer);
   }, [formula, fieldName, datasourceId, open, activeTab]);
-
-  // Validate parameter value against allowable range/list
-  useEffect(() => {
-    if (activeTab !== "parameter") return;
-
-    if (!paramCurrentValue.trim()) {
-      setParamValid(false);
-      setParamError("ERR-VIZ-02: Vui lòng nhập giá trị hiện tại của tham số.");
-      return;
-    }
-
-    if (allowableType === "RANGE") {
-      const min = parseFloat(rangeMin);
-      const max = parseFloat(rangeMax);
-      const curr = parseFloat(paramCurrentValue);
-
-      if (isNaN(curr) || isNaN(min) || isNaN(max)) {
-        setParamValid(false);
-        setParamError("ERR-VIZ-02: Giá trị tham số và giới hạn phải là số hợp lệ.");
-      } else if (curr < min || curr > max) {
-        setParamValid(false);
-        setParamError(
-          `ERR-VIZ-02: Giá trị ${curr} nằm ngoài phạm vi cho phép [${min}, ${max}].`,
-        );
-      } else {
-        setParamValid(true);
-        setParamError(null);
-      }
-    } else if (allowableType === "LIST") {
-      const allowedList = listValues
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-      if (allowedList.length > 0 && !allowedList.includes(paramCurrentValue.trim())) {
-        setParamValid(false);
-        setParamError(
-          `ERR-VIZ-02: Giá trị "${paramCurrentValue}" không nằm trong danh sách giá trị cho phép.`,
-        );
-      } else {
-        setParamValid(true);
-        setParamError(null);
-      }
-    } else {
-      setParamValid(true);
-      setParamError(null);
-    }
-  }, [paramCurrentValue, rangeMin, rangeMax, listValues, allowableType, activeTab]);
 
   const handleSaveField = async () => {
     if (!fieldValid || !fieldName.trim()) return;
@@ -170,7 +172,7 @@ export default function CalculatedFieldDialog({
       toast(`Đã tạo trường tính toán "${fieldName}"`);
       onSuccess?.();
       onOpenChange(false);
-    } catch (err: unknown) {
+    } catch {
       toast("Lỗi lưu trường tính toán", "error");
     }
   };

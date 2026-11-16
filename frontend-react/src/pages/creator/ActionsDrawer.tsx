@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AlertCircle, Plus, Trash2, X } from "lucide-react";
 import { Button, Input, Label, Select } from "../../components/ui";
 import { useUIStore } from "../../stores/ui.store";
@@ -20,6 +20,7 @@ export default function ActionsDrawer({
   onActionsChange,
 }: ActionsDrawerProps) {
   const [adding, setAdding] = useState(false);
+  const actionCounterRef = useRef(10);
   const [name, setName] = useState("Lọc theo vùng");
   const [actionType, setActionType] = useState<"FILTER" | "HIGHLIGHT" | "URL" | "GO_TO_SHEET" | "PARAMETER">("FILTER");
   const [triggerEvent, setTriggerEvent] = useState<"SELECT" | "HOVER" | "MENU">("SELECT");
@@ -58,8 +59,9 @@ export default function ActionsDrawer({
       }
     }
 
+    actionCounterRef.current += 1;
     const newAction: DashboardActionDto = {
-      id: `act-${Date.now()}`,
+      id: `act-${actionCounterRef.current}`,
       name: name.trim() || `Hành động ${actions.length + 1}`,
       actionType,
       triggerEvent,

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   BarChart3,
   Calculator,
@@ -71,7 +71,7 @@ export default function SheetBuilderPage() {
   const [over, setOver] = useState<"columns" | "rows" | null>(null);
   const [search, setSearch] = useState("");
   const [sheetName, setSheetName] = useState("Doanh số theo tháng");
-  const [selectedChartType, setSelectedChartType] = useState<string>("BAR");
+  const [userSelectedChartType, setUserSelectedChartType] = useState<string | null>(null);
   const [useCanvasRenderer, setUseCanvasRenderer] = useState(false);
   const [saving, setSaving] = useState(false);
   const [tooltipModalOpen, setTooltipModalOpen] = useState(false);
@@ -102,12 +102,7 @@ export default function SheetBuilderPage() {
     return "BAR";
   }, [columns, rows]);
 
-  // Keep selectedChartType aligned with suggestion unless user explicitly clicks Show Me
-  useEffect(() => {
-    if (suggestedChartType) {
-      setSelectedChartType(suggestedChartType);
-    }
-  }, [suggestedChartType]);
+  const selectedChartType = userSelectedChartType ?? suggestedChartType;
 
   // BUS-VIZ-02 / ERR-VIZ-04: Mark count simulation & warning when > 100,000 marks
   const simulatedMarkCount = useMemo(() => {
@@ -434,7 +429,7 @@ export default function SheetBuilderPage() {
                 <button
                   key={chart.id}
                   type="button"
-                  onClick={() => setSelectedChartType(chart.id)}
+                  onClick={() => setUserSelectedChartType(chart.id)}
                   className={`flex aspect-square flex-col items-center justify-center rounded-lg border text-[10px] transition-all relative ${
                     isSelected
                       ? "border-primary bg-primary-tint text-primary font-semibold shadow-sm"
@@ -467,7 +462,7 @@ export default function SheetBuilderPage() {
               <Select
                 className="w-full text-xs"
                 value={selectedChartType}
-                onChange={(e) => setSelectedChartType(e.target.value)}
+                onChange={(e) => setUserSelectedChartType(e.target.value)}
               >
                 <option value="BAR">Biểu đồ cột (Bar Chart)</option>
                 <option value="LINE">Biểu đồ đường (Line Chart)</option>

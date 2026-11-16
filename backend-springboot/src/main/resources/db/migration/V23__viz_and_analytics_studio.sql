@@ -1,5 +1,5 @@
 -- ============================================================================
--- V9__viz_and_analytics_studio.sql
+-- V23__viz_and_analytics_studio.sql
 -- Supports UC15 (Sheets & Query), UC16 (Calculated Fields & Parameters),
 -- UC17 (Dashboards), and UC18 (Dashboard Actions & Tooltips)
 -- ============================================================================

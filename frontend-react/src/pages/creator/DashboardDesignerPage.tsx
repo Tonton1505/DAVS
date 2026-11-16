@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   AlertCircle,
   Copy,
@@ -104,10 +104,12 @@ export default function DashboardDesignerPage() {
 
   // BUS-VIZ-08: Warning when dashboard has more than 10 objects
   const overTenObjects = tiles.length > 10;
+  const tileCounterRef = useRef(10);
 
   const handleAddSheetTile = (sheetName: string) => {
+    tileCounterRef.current += 1;
     const newTile: DashboardTileDto = {
-      id: `tile-${Date.now()}`,
+      id: `tile-${tileCounterRef.current}`,
       tileType: "SHEET",
       sheetId: sheetName,
       title: sheetName,
@@ -121,8 +123,9 @@ export default function DashboardDesignerPage() {
   };
 
   const handleAddObjectTile = (type: string, title: string) => {
+    tileCounterRef.current += 1;
     const newTile: DashboardTileDto = {
-      id: `tile-${Date.now()}`,
+      id: `tile-${tileCounterRef.current}`,
       tileType: type,
       title,
       content: type === "TEXT" ? "Nhập ghi chú hoặc phân tích tại đây..." : undefined,
@@ -140,9 +143,10 @@ export default function DashboardDesignerPage() {
   };
 
   const handleDuplicateTile = (tile: DashboardTileDto) => {
+    tileCounterRef.current += 1;
     const duplicate: DashboardTileDto = {
       ...tile,
-      id: `tile-${Date.now()}`,
+      id: `tile-${tileCounterRef.current}`,
       title: `${tile.title} (Bản sao)`,
       x: 0,
       y: tile.y + 4,
