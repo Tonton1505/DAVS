@@ -80,7 +80,7 @@ public class JdbcUserCreationRepository {
             SiteRole siteRole,
             UUID createdBy
     ) {
-        return jdbcTemplate.queryForObject(
+        UUID userId = jdbcTemplate.queryForObject(
                 """
                 INSERT INTO users (
                     email, password_hash, full_name, auth_method, site_role,
@@ -97,6 +97,17 @@ public class JdbcUserCreationRepository {
                 siteRole.name(),
                 createdBy
         );
+        if (userId != null) {
+            jdbcTemplate.update(
+                    """
+                    INSERT INTO group_members (group_id, user_id)
+                    SELECT id, ? FROM groups WHERE lower(name) = lower('All Users')
+                    ON CONFLICT (group_id, user_id) DO NOTHING
+                    """,
+                    userId
+            );
+        }
+        return userId;
     }
 
     public void updateUserStatus(UUID userId, String status) {
