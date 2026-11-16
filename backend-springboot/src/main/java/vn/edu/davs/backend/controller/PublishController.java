@@ -20,7 +20,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * REST controller for UC21: Publish Workbook (FR-SHR-01, SCR-21).
+ * REST controller for UC21: Publish Workbook (FR-SHR-01, URD-14, SCR-21).
+ * Supports Internal Server, Cloud, and Public destinations with permission and security validation.
  */
 @RestController
 @RequestMapping("/api/v1/workbooks")

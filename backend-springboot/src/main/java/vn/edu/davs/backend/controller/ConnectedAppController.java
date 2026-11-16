@@ -25,7 +25,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * REST controller for UC26: Connected Applications Management (FR-INT-01, SCR-26).
+ * REST controller for UC26: Connected Applications Management (FR-INT-01, URD-18, SCR-26).
+ * Handles Direct Trust, OAuth 2.0 Trust, secret rotation, and token invalidation.
  */
 @RestController
 @RequestMapping("/api/v1/connected-apps")

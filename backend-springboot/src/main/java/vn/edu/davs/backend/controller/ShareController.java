@@ -22,7 +22,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * REST controller for UC22: Content Sharing (FR-SHR-02, SCR-22).
+ * REST controller for UC22: Content Sharing (FR-SHR-02, URD-15, SCR-22).
+ * Supports recipient sharing, permission level ceilings, and embed link generation.
  */
 @RestController
 @RequestMapping("/api/v1")
