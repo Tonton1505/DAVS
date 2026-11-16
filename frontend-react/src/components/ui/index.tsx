@@ -575,9 +575,23 @@ export function RowMenu() {
     </IconButton>
   );
 }
-export function Alert({ children }: { children: ReactNode }) {
+export function Alert({
+  children,
+  className = "",
+  role = "alert",
+}: {
+  children: ReactNode;
+  className?: string;
+  role?: string;
+}) {
   return (
-    <div className="rounded-lg border border-primary-border bg-primary-tint p-4 text-sm text-foreground">
+    <div
+      role={role}
+      className={cn(
+        "rounded-lg border border-primary-border bg-primary-tint p-4 text-sm text-foreground",
+        className,
+      )}
+    >
       {children}
     </div>
   );
