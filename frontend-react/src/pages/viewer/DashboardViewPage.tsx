@@ -1,7 +1,10 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Bookmark,
+  Copy,
   Download,
   Edit3,
+  Layers,
   MessageSquare,
   RotateCcw,
   Share2,
@@ -9,7 +12,7 @@ import {
   Star,
   Undo2,
 } from "lucide-react";
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import {
   Bar,
   BarChart,
@@ -29,6 +32,11 @@ import { useAuthStore } from "../../stores/auth.store";
 import ExportDialog from "./dialogs/ExportDialog";
 import ShareDialog from "./dialogs/ShareDialog";
 import CommentsPanel from "./dialogs/CommentsPanel";
+import CustomViewsModal from "./dialogs/CustomViewsModal";
+import SaveAsWorkbookModal from "./dialogs/SaveAsWorkbookModal";
+import { dashboardService, type DashboardViewDto } from "../../services/dashboard.service";
+import { customViewService, type CustomViewDto } from "../../services/custom-view.service";
+
 const months = ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"];
 const base = [82, 96, 105, 118, 126, 138, 148, 156, 172, 188, 205, 240];
 const products = [
@@ -43,21 +51,114 @@ const products = [
   "Bàn phím Cơ",
   "Chuột Pro",
 ];
+
+const DEFAULT_DASHBOARD_ID = "00000000-0000-0000-0000-000000000501";
+
 export default function DashboardViewPage() {
-  const nav = useNavigate(),
-    role = useAuthStore((s) => s.role),
-    [region, setRegion] = useState("Tất cả vùng"),
-    [top, setTop] = useState(10),
-    [selected, setSelected] = useState<number | null>(null),
-    [loading, setLoading] = useState(false),
-    [share, setShare] = useState(false),
-    [exp, setExp] = useState(false),
-    [comments, setComments] = useState(false);
+  const { id } = useParams<{ id: string }>();
+  const activeDashboardId = id || DEFAULT_DASHBOARD_ID;
+
+  const nav = useNavigate();
+  const role = useAuthStore((s) => s.role);
+
+  const [dashboardView, setDashboardView] = useState<DashboardViewDto | null>(null);
+  const [customViews, setCustomViews] = useState<CustomViewDto[]>([]);
+  const [activeCustomView, setActiveCustomView] = useState<CustomViewDto | null>(null);
+
+  const [region, setRegion] = useState("Tất cả vùng");
+  const [top, setTop] = useState(10);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // Modals & Panels
+  const [share, setShare] = useState(false);
+  const [exp, setExp] = useState(false);
+  const [comments, setComments] = useState(false);
+  const [customViewsOpen, setCustomViewsOpen] = useState(false);
+  const [saveAsOpen, setSaveAsOpen] = useState(false);
+
+  const applyCustomView = useCallback((cv: CustomViewDto) => {
+    setActiveCustomView(cv);
+    if (cv.filters && cv.filters.region) {
+      setRegion(String(cv.filters.region));
+    }
+    if (cv.parameters && cv.parameters.top) {
+      setTop(Number(cv.parameters.top));
+    }
+    setLoading(true);
+    setTimeout(() => setLoading(false), 300);
+  }, []);
+
+  const refreshDashboardData = useCallback(async () => {
+    try {
+      const view = await dashboardService.getView(activeDashboardId);
+      setDashboardView(view);
+    } catch {
+      // ignore
+    }
+    try {
+      const views = await customViewService.list(activeDashboardId);
+      setCustomViews(views);
+    } catch {
+      // ignore
+    }
+  }, [activeDashboardId]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    dashboardService
+      .getView(activeDashboardId)
+      .then((view) => {
+        if (!ignore) setDashboardView(view);
+      })
+      .catch(() => {
+        if (!ignore) {
+          setDashboardView({
+            id: activeDashboardId,
+            workbookId: "00000000-0000-0000-0000-000000000201",
+            workbookName: "Báo cáo bán hàng Q4",
+            name: "Tổng quan kinh doanh",
+            description: "Báo cáo bán hàng công ty",
+            definition: "{}",
+            dataAsOf: new Date().toISOString(),
+            canView: true,
+            canInteract: true,
+            canFilter: true,
+            canDownload: true,
+            canComment: true,
+            canWebEdit: role === "creator" || role === "admin",
+          });
+        }
+      });
+
+    customViewService
+      .list(activeDashboardId)
+      .then((views) => {
+        if (!ignore) {
+          setCustomViews(views);
+          const defaultView = views.find((v) => v.isDefault);
+          if (defaultView) {
+            applyCustomView(defaultView);
+          }
+        }
+      })
+      .catch(() => {
+        if (!ignore) setCustomViews([]);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [activeDashboardId, role, applyCustomView]);
+
   const update = (fn: () => void) => {
+    if (dashboardView && !dashboardView.canFilter) return;
     fn();
     setLoading(true);
     setTimeout(() => setLoading(false), 450);
   };
+
   const sales = useMemo(
     () =>
       base.map((v, i) => ({
@@ -66,14 +167,27 @@ export default function DashboardViewPage() {
       })),
     [region],
   );
+
   const productData = products.slice(0, top).map((name, i) => ({ name, value: 210 - i * 14 }));
+
+  const currentFilters = useMemo(() => ({ region }), [region]);
+  const currentParameters = useMemo(() => ({ top }), [top]);
+
   const content = (
     <>
       <PageHeader
-        title="Tổng quan kinh doanh"
-        eyebrow="Trang chủ › Báo cáo bán hàng Q4"
+        title={dashboardView?.name || "Tổng quan kinh doanh"}
+        eyebrow={`Trang chủ › ${dashboardView?.workbookName || "Báo cáo bán hàng Q4"}`}
         actions={
           <>
+            <Button onClick={() => setCustomViewsOpen(true)} title="Góc nhìn tùy chỉnh">
+              <Bookmark className="size-4" />
+              {activeCustomView ? `View: ${activeCustomView.name}` : "Custom Views"}
+            </Button>
+            <Button onClick={() => setSaveAsOpen(true)} title="Lưu thành workbook riêng">
+              <Copy className="size-4" />
+              Lưu bản riêng
+            </Button>
             <Button onClick={() => {}}>
               <Star className="size-4" />
               Yêu thích
@@ -84,15 +198,19 @@ export default function DashboardViewPage() {
                 Chia sẻ
               </Button>
             )}
-            <Button onClick={() => setExp(true)}>
-              <Download className="size-4" />
-              Tải xuống
-            </Button>
-            <Button onClick={() => setComments(true)}>
-              <MessageSquare className="size-4" />
-              Bình luận
-            </Button>
-            {(role === "creator" || role === "admin") && (
+            {dashboardView?.canDownload !== false && (
+              <Button onClick={() => setExp(true)}>
+                <Download className="size-4" />
+                Tải xuống
+              </Button>
+            )}
+            {dashboardView?.canComment !== false && (
+              <Button onClick={() => setComments(!comments)}>
+                <MessageSquare className="size-4" />
+                Bình luận
+              </Button>
+            )}
+            {dashboardView?.canWebEdit && (
               <Button
                 variant="primary"
                 className="hidden md:flex"
@@ -107,7 +225,14 @@ export default function DashboardViewPage() {
       />
       <div className="mb-4 flex items-center justify-between rounded-lg bg-ink px-5 py-3 text-white">
         <div>
-          <div className="font-semibold">Tổng quan kinh doanh 2026</div>
+          <div className="font-semibold flex items-center gap-2">
+            <span>{dashboardView?.name || "Tổng quan kinh doanh 2026"}</span>
+            {activeCustomView && (
+              <span className="rounded bg-white/20 px-2 py-0.5 text-xs text-white">
+                View: {activeCustomView.name}
+              </span>
+            )}
+          </div>
           <div className="text-xs text-white/60">Công ty ABC · Đơn vị: triệu đồng</div>
         </div>
         <div className="flex gap-1">
@@ -122,6 +247,7 @@ export default function DashboardViewPage() {
               setSelected(null);
               setRegion("Tất cả vùng");
               setTop(10);
+              setActiveCustomView(null);
             }}
           >
             <RotateCcw className="size-4" />
@@ -139,10 +265,12 @@ export default function DashboardViewPage() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={sales}
-                onClick={(e) =>
-                  e?.activeTooltipIndex != null &&
-                  update(() => setSelected(Number(e.activeTooltipIndex)))
-                }
+                onClick={(e) => {
+                  if (dashboardView && !dashboardView.canInteract) return;
+                  if (e?.activeTooltipIndex != null) {
+                    update(() => setSelected(Number(e.activeTooltipIndex)));
+                  }
+                }}
               >
                 <CartesianGrid stroke="#E5E7EB" vertical={false} />
                 <XAxis dataKey="month" tick={{ fill: "#6B7280", fontSize: 11 }} />
@@ -262,6 +390,7 @@ export default function DashboardViewPage() {
               <Select
                 className="w-full"
                 value={region}
+                disabled={dashboardView?.canFilter === false}
                 onChange={(e) => update(() => setRegion(e.target.value))}
               >
                 <option>Tất cả vùng</option>
@@ -285,6 +414,7 @@ export default function DashboardViewPage() {
                 min="1"
                 max="10"
                 value={top}
+                disabled={dashboardView?.canFilter === false}
                 onChange={(e) => update(() => setTop(Number(e.target.value)))}
                 className="w-full accent-primary"
               />
@@ -293,28 +423,74 @@ export default function DashboardViewPage() {
                 <span>50</span>
               </div>
             </div>
-            <Button
-              className="w-full"
-              onClick={() => {
-                setRegion("Tất cả vùng");
-                setTop(10);
-                setSelected(null);
-              }}
-            >
-              Đặt lại bộ lọc
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button
+                className="w-full"
+                disabled={dashboardView?.canFilter === false}
+                onClick={() => {
+                  setRegion("Tất cả vùng");
+                  setTop(10);
+                  setSelected(null);
+                  setActiveCustomView(null);
+                }}
+              >
+                Đặt lại bộ lọc
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full flex items-center justify-center gap-1.5 text-xs"
+                onClick={() => setCustomViewsOpen(true)}
+              >
+                <Layers className="size-3.5" />
+                Lưu / Quản lý View
+              </Button>
+            </div>
           </div>
         </Card>
       </div>
       <div className="mt-4 text-xs text-muted-foreground">
-        Cập nhật dữ liệu lần cuối: 31/10/2026 02:00
+        Cập nhật dữ liệu lần cuối (dataAsOf):{" "}
+        {dashboardView?.dataAsOf
+          ? new Date(dashboardView.dataAsOf).toLocaleString("vi-VN")
+          : "31/10/2026 02:00"}
       </div>
+
       <ShareDialog open={share} onOpenChange={setShare} />
-      <ExportDialog open={exp} onOpenChange={setExp} />
+      <ExportDialog
+        open={exp}
+        onOpenChange={setExp}
+        dashboardId={dashboardView?.id || activeDashboardId}
+      />
+      <CustomViewsModal
+        open={customViewsOpen}
+        onOpenChange={setCustomViewsOpen}
+        dashboardId={activeDashboardId}
+        views={customViews}
+        activeViewId={activeCustomView?.id || null}
+        onSelectView={applyCustomView}
+        onRefreshViews={refreshDashboardData}
+        currentFilters={currentFilters}
+        currentParameters={currentParameters}
+      />
+      <SaveAsWorkbookModal
+        open={saveAsOpen}
+        onOpenChange={setSaveAsOpen}
+        sourceWorkbookId={dashboardView?.workbookId || "00000000-0000-0000-0000-000000000201"}
+        defaultName={`${dashboardView?.workbookName || "Workbook"} (Bản sao)`}
+      />
     </>
   );
+
   return comments ? (
-    <SplitScreen left={<div className="p-5">{content}</div>} right={<CommentsPanel />} />
+    <SplitScreen
+      left={<div className="p-5">{content}</div>}
+      right={
+        <CommentsPanel
+          resourceType="DASHBOARD"
+          resourceId={dashboardView?.id || activeDashboardId}
+        />
+      }
+    />
   ) : (
     content
   );
