@@ -14,6 +14,7 @@ export const routeAccess: Array<[RegExp, string]> = [
   [/^\/admin\/groups/, "UC04"],
   [/^\/admin\/settings/, "UC25"],
   [/^\/projects\/[^/]+\/permissions/, "UC07"],
+  [/^\/projects\/[^/]+\/upload/, "UC08"],
   [/^\/workbooks\/upload/, "UC08"],
   [/^\/labels/, "UC09"],
   [/^\/workbooks\/[^/]+\/versions/, "UC10"],
