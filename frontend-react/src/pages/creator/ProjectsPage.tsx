@@ -7,6 +7,7 @@ import {
   Folder,
   Grid2X2,
   History,
+  LayoutDashboard,
   List,
   Move,
   Pencil,
@@ -445,6 +446,8 @@ export default function ProjectsPage() {
                     onClick={() => {
                       if (isFolder) {
                         nav(`/projects/${item.id}`);
+                      } else if (role === "viewer") {
+                        nav(`/dashboards/${item.id}`);
                       } else {
                         nav(`/workbooks/${item.id}/versions`);
                       }
@@ -462,6 +465,8 @@ export default function ProjectsPage() {
                       onClick={() => {
                         if (isFolder) {
                           nav(`/projects/${item.id}`);
+                        } else if (role === "viewer") {
+                          nav(`/dashboards/${item.id}`);
                         } else {
                           nav(`/workbooks/${item.id}/versions`);
                         }
@@ -517,6 +522,16 @@ export default function ProjectsPage() {
                           onClick={() => handleDownloadWorkbook(item)}
                         >
                           <Download className="size-4" />
+                        </button>
+                      )}
+                      {!isFolder && (
+                        <button
+                          type="button"
+                          className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-ink"
+                          title="Xem Dashboard"
+                          onClick={() => nav(`/dashboards/${item.id}`)}
+                        >
+                          <LayoutDashboard className="size-4" />
                         </button>
                       )}
                       {item.allowedActions.includes("VERSION_HISTORY") && !isFolder && (
