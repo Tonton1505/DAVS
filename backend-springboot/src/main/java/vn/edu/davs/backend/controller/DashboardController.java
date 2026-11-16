@@ -118,7 +118,7 @@ public class DashboardController {
     }
 
     @Operation(summary = "Execute interactive query on dashboard with applied filters and parameters")
-    @PostMapping({"/api/v1/query", "/api/v1/dashboards/query"})
+    @PostMapping("/api/v1/dashboards/query")
     public ResponseEntity<QueryResultDto> executeQuery(
             @RequestBody QueryRequest request,
             @AuthenticationPrincipal DavsUser actor

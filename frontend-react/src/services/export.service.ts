@@ -18,12 +18,12 @@ export interface ExportRequest {
 
 export const exportService = {
   getLimits: async () => {
-    const res = await client.get<ExportLimitsDto>("/api/v1/exports/limits");
+    const res = await client.get<ExportLimitsDto>("/v1/exports/limits");
     return res.data;
   },
 
   download: async (data: ExportRequest) => {
-    const res = await client.post("/api/v1/exports", data, {
+    const res = await client.post("/v1/exports", data, {
       responseType: "blob",
     });
     return res;

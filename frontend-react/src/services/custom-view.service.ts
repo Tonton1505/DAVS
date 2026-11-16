@@ -33,31 +33,31 @@ export interface SaveAsWorkbookRequest {
 
 export const customViewService = {
   list: async (dashboardId: string) => {
-    const res = await client.get<CustomViewDto[]>(`/api/v1/dashboards/${dashboardId}/custom-views`);
+    const res = await client.get<CustomViewDto[]>(`/v1/dashboards/${dashboardId}/custom-views`);
     return res.data;
   },
 
   create: async (dashboardId: string, data: CreateCustomViewRequest) => {
-    const res = await client.post<CustomViewDto>(`/api/v1/dashboards/${dashboardId}/custom-views`, data);
+    const res = await client.post<CustomViewDto>(`/v1/dashboards/${dashboardId}/custom-views`, data);
     return res.data;
   },
 
   setDefault: async (id: string) => {
-    await client.put(`/api/v1/custom-views/${id}/default`);
+    await client.put(`/v1/custom-views/${id}/default`);
   },
 
   setShared: async (id: string, shared: boolean) => {
-    await client.put(`/api/v1/custom-views/${id}/share`, null, {
+    await client.put(`/v1/custom-views/${id}/share`, null, {
       params: { shared },
     });
   },
 
   delete: async (id: string) => {
-    await client.delete(`/api/v1/custom-views/${id}`);
+    await client.delete(`/v1/custom-views/${id}`);
   },
 
   saveAsWorkbook: async (data: SaveAsWorkbookRequest) => {
-    const res = await client.post<WorkbookDto>("/api/v1/workbooks/save-as", data);
+    const res = await client.post<WorkbookDto>("/v1/workbooks/save-as", data);
     return res.data;
   },
 };

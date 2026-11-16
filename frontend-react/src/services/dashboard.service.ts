@@ -53,22 +53,22 @@ export interface CreateDashboardRequest {
 
 export const dashboardService = {
   getById: async (id: string) => {
-    const res = await client.get<DashboardDto>(`/api/v1/dashboards/${id}`);
+    const res = await client.get<DashboardDto>(`/v1/dashboards/${id}`);
     return res.data;
   },
 
   getView: async (id: string) => {
-    const res = await client.get<DashboardViewDto>(`/api/v1/dashboards/${id}/view`);
+    const res = await client.get<DashboardViewDto>(`/v1/dashboards/${id}/view`);
     return res.data;
   },
 
   create: async (data: CreateDashboardRequest) => {
-    const res = await client.post<DashboardDto>("/api/v1/dashboards", data);
+    const res = await client.post<DashboardDto>("/v1/dashboards", data);
     return res.data;
   },
 
   query: async (data: QueryRequest) => {
-    const res = await client.post<QueryResultDto>("/api/v1/dashboards/query", data);
+    const res = await client.post<QueryResultDto>("/v1/dashboards/query", data);
     return res.data;
   },
 };

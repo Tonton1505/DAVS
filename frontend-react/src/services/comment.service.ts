@@ -40,7 +40,7 @@ export const commentService = {
   list: async (): Promise<Comment[]> => {
     try {
       const res = await client.get<CommentDto[]>(
-        "/api/v1/resources/DASHBOARD/00000000-0000-0000-0000-000000000501/comments"
+        "/v1/resources/DASHBOARD/00000000-0000-0000-0000-000000000501/comments"
       );
       return res.data.map((c) => ({
         id: c.id,
@@ -56,25 +56,25 @@ export const commentService = {
   },
 
   listByResource: async (resourceType: string, resourceId: string) => {
-    const res = await client.get<CommentDto[]>(`/api/v1/resources/${resourceType}/${resourceId}/comments`);
+    const res = await client.get<CommentDto[]>(`/v1/resources/${resourceType}/${resourceId}/comments`);
     return res.data;
   },
 
   create: async (resourceType: string, resourceId: string, data: CreateCommentRequest) => {
-    const res = await client.post<CommentDto>(`/api/v1/resources/${resourceType}/${resourceId}/comments`, data);
+    const res = await client.post<CommentDto>(`/v1/resources/${resourceType}/${resourceId}/comments`, data);
     return res.data;
   },
 
   update: async (commentId: string, data: UpdateCommentRequest) => {
-    await client.put(`/api/v1/comments/${commentId}`, data);
+    await client.put(`/v1/comments/${commentId}`, data);
   },
 
   delete: async (commentId: string) => {
-    await client.delete(`/api/v1/comments/${commentId}`);
+    await client.delete(`/v1/comments/${commentId}`);
   },
 
   reply: async (commentId: string, data: CreateReplyRequest) => {
-    const res = await client.post<CommentDto>(`/api/v1/comments/${commentId}/replies`, data);
+    const res = await client.post<CommentDto>(`/v1/comments/${commentId}/replies`, data);
     return res.data;
   },
 };
