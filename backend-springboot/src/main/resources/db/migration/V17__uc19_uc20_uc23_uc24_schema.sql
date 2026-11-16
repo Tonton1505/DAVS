@@ -71,12 +71,11 @@ SELECT
     'Báo cáo bán hàng Q4',
     'Dashboard phân tích doanh số và hiệu suất sản phẩm quý 4',
     1,
-    u.id,
+    (SELECT id FROM users WHERE site_role = 'SITE_ADMIN' LIMIT 1),
     '{"sheets": ["Tổng quan kinh doanh", "Phân tích sản phẩm"], "theme": "default"}'::jsonb,
     'IMPORTED',
     now()
 FROM projects p
-JOIN users u ON u.site_role = 'SITE_ADMIN'
 WHERE p.is_default = TRUE
 LIMIT 1
 ON CONFLICT DO NOTHING;
