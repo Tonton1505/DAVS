@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   BarChart3,
   Calculator,
@@ -35,7 +35,14 @@ import { useBuilderStore } from "../../stores/builder.store";
 import type { Field } from "../../common/constants/types";
 import CalculatedFieldDialog from "./CalculatedFieldDialog";
 import { useUIStore } from "../../stores/ui.store";
-import { vizService, type TooltipConfigDto } from "../../services/viz.service";
+import {
+  DEFAULT_DATASOURCE_ID,
+  DEFAULT_SALES_2026_ROWS,
+  DEFAULT_WORKBOOK_ID,
+  vizService,
+  type Sales2026Row,
+  type TooltipConfigDto,
+} from "../../services/viz.service";
 import { ChartCanvas } from "../../canvas/components/ChartCanvas";
 
 const initialFields: Field[] = [
@@ -49,21 +56,6 @@ const initialFields: Field[] = [
   })),
 ];
 
-const mockData = [
-  { month: "T1", value: 82, profit: 24, quantity: 450, discount: 0.05 },
-  { month: "T2", value: 96, profit: 31, quantity: 510, discount: 0.05 },
-  { month: "T3", value: 105, profit: 35, quantity: 580, discount: 0.08 },
-  { month: "T4", value: 118, profit: 42, quantity: 620, discount: 0.08 },
-  { month: "T5", value: 126, profit: 40, quantity: 690, discount: 0.1 },
-  { month: "T6", value: 138, profit: 48, quantity: 720, discount: 0.1 },
-  { month: "T7", value: 148, profit: 53, quantity: 780, discount: 0.07 },
-  { month: "T8", value: 156, profit: 55, quantity: 810, discount: 0.07 },
-  { month: "T9", value: 172, profit: 62, quantity: 890, discount: 0.12 },
-  { month: "T10", value: 188, profit: 68, quantity: 950, discount: 0.12 },
-  { month: "T11", value: 205, profit: 75, quantity: 1040, discount: 0.15 },
-  { month: "T12", value: 240, profit: 92, quantity: 1200, discount: 0.2 },
-];
-
 export default function SheetBuilderPage() {
   const nav = useNavigate();
   const { columns, rows, past, future, drop, undo, redo } = useBuilderStore();
@@ -74,6 +66,7 @@ export default function SheetBuilderPage() {
   const [userSelectedChartType, setUserSelectedChartType] = useState<string | null>(null);
   const [useCanvasRenderer, setUseCanvasRenderer] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [queryRows, setQueryRows] = useState<Sales2026Row[]>(DEFAULT_SALES_2026_ROWS);
   const [tooltipModalOpen, setTooltipModalOpen] = useState(false);
   const [tooltipConfig, setTooltipConfig] = useState<TooltipConfigDto>({
     showTooltip: true,
@@ -82,6 +75,30 @@ export default function SheetBuilderPage() {
   });
 
   const toast = useUIStore((s) => s.toast);
+
+  useEffect(() => {
+    let active = true;
+    const execute = vizService.executeQuery?.({
+      datasourceId: DEFAULT_DATASOURCE_ID,
+      columns: columns.map((c) => c.name),
+      rows: rows.map((r) => r.name),
+      limit: 12,
+    });
+    if (execute && typeof execute.then === "function") {
+      execute
+        .then((res) => {
+          if (active && Array.isArray(res?.rows) && res.rows.length > 0) {
+            setQueryRows(res.rows as Sales2026Row[]);
+          }
+        })
+        .catch(() => {
+          // Keep default sales 2026 dataset when offline/mocked
+        });
+    }
+    return () => {
+      active = false;
+    };
+  }, [columns, rows]);
 
   const filteredFields = useMemo(() => {
     if (!search.trim()) return initialFields;
@@ -113,8 +130,8 @@ export default function SheetBuilderPage() {
     if (isCustomerPresent && isProductPresent) {
       return 150_000;
     }
-    return mockData.length;
-  }, [columns, rows]);
+    return queryRows.length;
+  }, [columns, rows, queryRows.length]);
 
   const markWarning = simulatedMarkCount > 100_000;
 
@@ -140,11 +157,12 @@ export default function SheetBuilderPage() {
     }
     setSaving(true);
     try {
-      await vizService.saveSheet("wb-default", {
-        datasourceId: "ds-sales-demo",
+      await vizService.saveSheet(DEFAULT_WORKBOOK_ID, {
+        datasourceId: DEFAULT_DATASOURCE_ID,
         name: sheetName.trim(),
         chartType: selectedChartType,
         config: { columns, rows, markCount: simulatedMarkCount },
+        definition: { columns, rows, markCount: simulatedMarkCount },
         tooltipConfig,
       });
       toast(`Đã lưu sheet "${sheetName}" thành công!`);
@@ -157,12 +175,12 @@ export default function SheetBuilderPage() {
   };
 
   const canvasDatum = useMemo(() => {
-    return mockData.map((d) => ({
+    return queryRows.map((d) => ({
       month: d.month,
       value: d.value,
       profit: d.profit,
     }));
-  }, []);
+  }, [queryRows]);
 
   return (
     <div className="-m-6">
@@ -333,7 +351,7 @@ export default function SheetBuilderPage() {
                 />
               ) : selectedChartType === "LINE" ? (
                 <ResponsiveContainer width="100%" height="95%">
-                  <RechartsLineChart data={mockData}>
+                  <RechartsLineChart data={queryRows}>
                     <CartesianGrid stroke="#E5E7EB" vertical={false} />
                     <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#6B7280" }} />
                     <YAxis tick={{ fontSize: 11, fill: "#6B7280" }} />
@@ -369,12 +387,12 @@ export default function SheetBuilderPage() {
                     <XAxis dataKey="quantity" name="Số lượng" tick={{ fontSize: 11 }} />
                     <YAxis dataKey="value" name="Doanh số" tick={{ fontSize: 11 }} />
                     <Tooltip cursor={{ strokeDasharray: "3 3" }} />
-                    <Scatter name="Doanh thu" data={mockData} fill="#C62828" />
+                    <Scatter name="Doanh thu" data={queryRows} fill="#C62828" />
                   </RechartsScatterChart>
                 </ResponsiveContainer>
               ) : (
                 <ResponsiveContainer width="100%" height="95%">
-                  <BarChart data={mockData}>
+                  <BarChart data={queryRows}>
                     <CartesianGrid stroke="#E5E7EB" vertical={false} />
                     <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#6B7280" }} />
                     <YAxis tick={{ fontSize: 11, fill: "#6B7280" }} />
@@ -388,8 +406,8 @@ export default function SheetBuilderPage() {
                       }}
                     />
                     <Bar dataKey="value">
-                      {mockData.map((_, i) => (
-                        <Cell key={i} fill={i === mockData.length - 1 ? "#C62828" : "#1F2937"} />
+                      {queryRows.map((_, i) => (
+                        <Cell key={i} fill={i === queryRows.length - 1 ? "#C62828" : "#1F2937"} />
                       ))}
                     </Bar>
                   </BarChart>

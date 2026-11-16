@@ -93,3 +93,34 @@ CREATE TABLE IF NOT EXISTS dashboards (
 );
 
 CREATE INDEX IF NOT EXISTS ix_dashboards_wb ON dashboards(workbook_id);
+
+-- Seed default sample 2026 Sales Data Source and Workbook for Studio (UC15–UC18)
+INSERT INTO data_sources (id, name, description, connector_type, mode, status, project_id, row_count, certified)
+SELECT
+    '00000000-0000-0000-0000-000000000101',
+    'Doanh số 2026',
+    'Nguồn dữ liệu mẫu phân tích doanh số, lợi nhuận và khách hàng năm 2026',
+    'POSTGRESQL',
+    'EXTRACT',
+    'ACTIVE',
+    (SELECT id FROM projects WHERE is_default = TRUE LIMIT 1),
+    120000,
+    TRUE
+WHERE NOT EXISTS (
+    SELECT 1 FROM data_sources WHERE id = '00000000-0000-0000-0000-000000000101'
+);
+
+INSERT INTO workbooks (id, project_id, name, description, datasource_id, status, current_version, import_status, needs_reconnect)
+SELECT
+    '00000000-0000-0000-0000-000000000201',
+    (SELECT id FROM projects WHERE is_default = TRUE LIMIT 1),
+    'Phân tích doanh số 2026',
+    'Workbook mặc định phục vụ phân tích trực quan và thiết kế dashboard doanh số 2026',
+    '00000000-0000-0000-0000-000000000101',
+    'DRAFT',
+    1,
+    'IMPORTED',
+    FALSE
+WHERE NOT EXISTS (
+    SELECT 1 FROM workbooks WHERE id = '00000000-0000-0000-0000-000000000201'
+);

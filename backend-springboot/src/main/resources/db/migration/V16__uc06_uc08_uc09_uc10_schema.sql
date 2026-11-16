@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS workbooks (
     name            VARCHAR(255) NOT NULL,
     description     VARCHAR(500),
     current_version INT          NOT NULL DEFAULT 1,
-    owner_id        UUID         NOT NULL REFERENCES users (id),
+    owner_id        UUID         REFERENCES users (id),
     definition      JSONB        NOT NULL DEFAULT '{}'::jsonb,
     import_status   VARCHAR(32)  NOT NULL DEFAULT 'IMPORTED',
     needs_reconnect BOOLEAN      NOT NULL DEFAULT FALSE,
@@ -38,6 +38,12 @@ CREATE TABLE IF NOT EXISTS workbooks (
     updated_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
     deleted_at      TIMESTAMPTZ
 );
+
+ALTER TABLE workbooks
+    ADD COLUMN IF NOT EXISTS current_version INT NOT NULL DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS definition JSONB NOT NULL DEFAULT '{}'::jsonb,
+    ADD COLUMN IF NOT EXISTS import_status VARCHAR(32) NOT NULL DEFAULT 'IMPORTED',
+    ADD COLUMN IF NOT EXISTS needs_reconnect BOOLEAN NOT NULL DEFAULT FALSE;
 
 CREATE UNIQUE INDEX IF NOT EXISTS uq_workbooks_project_name_active
     ON workbooks (project_id, lower(name))
@@ -119,4 +125,4 @@ VALUES
     ('00000000-0000-0000-0000-000000000301', 'Độ nhạy cảm', 'Phân loại mức độ nhạy cảm và bảo mật dữ liệu', FALSE, now()),
     ('00000000-0000-0000-0000-000000000302', 'Chứng nhận', 'Chứng nhận nguồn dữ liệu và báo cáo chính thức', FALSE, now()),
     ('00000000-0000-0000-0000-000000000303', 'Cảnh báo chất lượng', 'Cảnh báo chất lượng dữ liệu hiển thị nổi bật cho người xem', TRUE, now())
-ON CONFLICT (lower(name)) DO NOTHING;
+ON CONFLICT (id) DO NOTHING;

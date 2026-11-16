@@ -1,7 +1,7 @@
 # ============================================================================
 # Stage 1: Build React + TypeScript + Vite SPA (from frontend-react/)
 # ============================================================================
-FROM node:20-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /app
 
 COPY frontend-react/package.json frontend-react/package-lock.json* ./

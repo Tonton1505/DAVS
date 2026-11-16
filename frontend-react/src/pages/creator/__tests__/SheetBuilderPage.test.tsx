@@ -3,14 +3,19 @@ import { MemoryRouter } from "react-router";
 import SheetBuilderPage from "../SheetBuilderPage";
 import { vizService } from "../../../services/viz.service";
 
-vi.mock("../../../services/viz.service", () => ({
-  vizService: {
-    saveSheet: vi.fn(),
-    executeQuery: vi.fn(),
-    updateTooltip: vi.fn(),
-    validateFormula: vi.fn().mockResolvedValue({ valid: true }),
-  },
-}));
+vi.mock("../../../services/viz.service", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../../services/viz.service")>();
+  return {
+    ...actual,
+    vizService: {
+      ...actual.vizService,
+      saveSheet: vi.fn(),
+      executeQuery: vi.fn(),
+      updateTooltip: vi.fn(),
+      validateFormula: vi.fn().mockResolvedValue({ valid: true }),
+    },
+  };
+});
 
 describe("SheetBuilderPage (UC15)", () => {
   beforeEach(() => {
