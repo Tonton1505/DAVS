@@ -56,6 +56,13 @@ describe("<ChartCanvas /> and <Tooltip />", () => {
     const canvas = screen.getByRole("img", { name: "Biểu đồ doanh số" });
     expect(canvas).toBeInTheDocument();
 
+    const srTable = screen.getByRole("table", {
+      name: "Bảng dữ liệu thay thế: Biểu đồ doanh số",
+    });
+    expect(srTable).toBeInTheDocument();
+    expect(srTable).toHaveTextContent("Tháng 1");
+    expect(srTable).toHaveTextContent("850");
+
     // Hover near the first bar inside plot area (left margin = 60, plot width = 560)
     fireEvent.mouseMove(canvas, { clientX: 160, clientY: 250 });
 

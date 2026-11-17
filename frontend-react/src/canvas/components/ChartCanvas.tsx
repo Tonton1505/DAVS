@@ -102,6 +102,25 @@ export function ChartCanvas({
           seriesColor={hoverState.seriesColor}
         />
       </div>
+      {data.length > 0 && (
+        <table className="sr-only" aria-label={`Bảng dữ liệu thay thế: ${ariaLabel}`}>
+          <caption>{ariaLabel}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{encoding.x}</th>
+              <th scope="col">{encoding.y}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.slice(0, 100).map((row, idx) => (
+              <tr key={idx}>
+                <td>{String(row[encoding.x] ?? "")}</td>
+                <td>{String(row[encoding.y] ?? "")}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }
