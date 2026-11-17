@@ -11,6 +11,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,6 +30,7 @@ public class FormulaController {
     private final FormulaService formulaService;
 
     @PostMapping("/api/v1/formulas/validate")
+    @PreAuthorize("hasAnyRole('SITE_ADMIN', 'CREATOR', 'EXPLORER')")
     public ResponseEntity<FormulaValidateResponse> validateFormula(
             @Valid @RequestBody FormulaValidateRequest request
     ) {
@@ -41,6 +43,7 @@ public class FormulaController {
     }
 
     @PostMapping("/api/v1/datasources/{datasourceId}/calculated-fields")
+    @PreAuthorize("hasAnyRole('SITE_ADMIN', 'CREATOR', 'EXPLORER')")
     public ResponseEntity<CalculatedFieldDto> createCalculatedField(
             @PathVariable UUID datasourceId,
             @Valid @RequestBody SaveCalculatedFieldRequest request
@@ -50,6 +53,7 @@ public class FormulaController {
     }
 
     @PutMapping("/api/v1/datasources/{datasourceId}/calculated-fields/{fieldId}")
+    @PreAuthorize("hasAnyRole('SITE_ADMIN', 'CREATOR', 'EXPLORER')")
     public ResponseEntity<CalculatedFieldDto> updateCalculatedField(
             @PathVariable UUID datasourceId,
             @PathVariable UUID fieldId,
@@ -59,6 +63,7 @@ public class FormulaController {
     }
 
     @DeleteMapping("/api/v1/datasources/{datasourceId}/calculated-fields/{fieldId}")
+    @PreAuthorize("hasAnyRole('SITE_ADMIN', 'CREATOR', 'EXPLORER')")
     public ResponseEntity<Void> deleteCalculatedField(
             @PathVariable UUID datasourceId,
             @PathVariable UUID fieldId

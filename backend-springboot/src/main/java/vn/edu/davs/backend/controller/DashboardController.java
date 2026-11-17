@@ -18,6 +18,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -53,6 +54,7 @@ public class DashboardController {
     }
 
     @PostMapping("/api/v1/workbooks/{workbookId}/dashboards")
+    @PreAuthorize("hasAnyRole('SITE_ADMIN', 'CREATOR', 'EXPLORER')")
     public ResponseEntity<DashboardDto> createDashboard(
             @PathVariable UUID workbookId,
             @Valid @RequestBody SaveDashboardRequest request
@@ -61,6 +63,7 @@ public class DashboardController {
     }
 
     @PutMapping("/api/v1/workbooks/{workbookId}/dashboards/{dashId}")
+    @PreAuthorize("hasAnyRole('SITE_ADMIN', 'CREATOR', 'EXPLORER')")
     public ResponseEntity<DashboardDto> updateDashboard(
             @PathVariable UUID workbookId,
             @PathVariable UUID dashId,
@@ -70,12 +73,14 @@ public class DashboardController {
     }
 
     @DeleteMapping("/api/v1/workbooks/{workbookId}/dashboards/{dashId}")
+    @PreAuthorize("hasAnyRole('SITE_ADMIN', 'CREATOR', 'EXPLORER')")
     public ResponseEntity<Void> deleteDashboard(@PathVariable UUID workbookId, @PathVariable UUID dashId) {
         dashboardService.deleteDashboard(dashId);
         return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/api/v1/workbooks/{workbookId}/dashboards/{dashId}/actions")
+    @PreAuthorize("hasAnyRole('SITE_ADMIN', 'CREATOR', 'EXPLORER')")
     public ResponseEntity<DashboardDto> saveActions(
             @PathVariable UUID workbookId,
             @PathVariable UUID dashId,

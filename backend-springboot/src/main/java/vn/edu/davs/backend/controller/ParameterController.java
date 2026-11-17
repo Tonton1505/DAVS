@@ -9,6 +9,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,6 +35,7 @@ public class ParameterController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('SITE_ADMIN', 'CREATOR', 'EXPLORER')")
     public ResponseEntity<ParameterDto> createParameter(
             @PathVariable UUID workbookId,
             @Valid @RequestBody SaveParameterRequest request
@@ -43,6 +45,7 @@ public class ParameterController {
     }
 
     @PutMapping("/{paramId}")
+    @PreAuthorize("hasAnyRole('SITE_ADMIN', 'CREATOR', 'EXPLORER')")
     public ResponseEntity<ParameterDto> updateParameter(
             @PathVariable UUID workbookId,
             @PathVariable UUID paramId,
@@ -52,6 +55,7 @@ public class ParameterController {
     }
 
     @DeleteMapping("/{paramId}")
+    @PreAuthorize("hasAnyRole('SITE_ADMIN', 'CREATOR', 'EXPLORER')")
     public ResponseEntity<Void> deleteParameter(
             @PathVariable UUID workbookId,
             @PathVariable UUID paramId

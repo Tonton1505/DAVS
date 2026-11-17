@@ -10,6 +10,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -40,6 +41,7 @@ public class SheetController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('SITE_ADMIN', 'CREATOR', 'EXPLORER')")
     public ResponseEntity<SheetDto> createSheet(
             @PathVariable UUID workbookId,
             @Valid @RequestBody SaveSheetRequest request
@@ -48,6 +50,7 @@ public class SheetController {
     }
 
     @PutMapping("/{sheetId}")
+    @PreAuthorize("hasAnyRole('SITE_ADMIN', 'CREATOR', 'EXPLORER')")
     public ResponseEntity<SheetDto> updateSheet(
             @PathVariable UUID workbookId,
             @PathVariable UUID sheetId,
@@ -57,12 +60,14 @@ public class SheetController {
     }
 
     @DeleteMapping("/{sheetId}")
+    @PreAuthorize("hasAnyRole('SITE_ADMIN', 'CREATOR', 'EXPLORER')")
     public ResponseEntity<Void> deleteSheet(@PathVariable UUID workbookId, @PathVariable UUID sheetId) {
         sheetService.deleteSheet(sheetId);
         return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{sheetId}/tooltip")
+    @PreAuthorize("hasAnyRole('SITE_ADMIN', 'CREATOR', 'EXPLORER')")
     public ResponseEntity<SheetDto> updateTooltip(
             @PathVariable UUID workbookId,
             @PathVariable UUID sheetId,
