@@ -1,0 +1,173 @@
+name: davs-prod
+
+# ============================================================================
+# DAVS Production Stack (T-107)
+# - TLS termination via Nginx reverse proxy (ports 80 -> 443)
+# - PostgreSQL, MinIO, and Backend stay strictly on internal network (NO host ports)
+# - All secrets MUST be provided via environment variables / .env.prod
+# ============================================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: davs-prod-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-davs}
+      POSTGRES_USER: ${DB_USER:-davs}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in production}
+    # NO ports exposed to host in production
+    volumes:
+      - pgdata_prod:/var/lib/postgresql/data
+      - ../backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    networks:
+      - davs-prod-net
+
+  minio:
+    image: pgsty/silo:latest
+    container_name: davs-prod-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY must be set in production}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY must be set in production}
+    # NO ports exposed to host in production
+    volumes:
+      - miniodata_prod:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/minio/health/live || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    networks:
+      - davs-prod-net
+
+  minio-init:
+    image: pgsty/silo:latest
+    container_name: davs-prod-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY must be set in production}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY must be set in production}
+    entrypoint: >
+      /bin/sh -c "
+      for i in 1 2 3 4 5 6 7 8 9 10; do
+        mc alias set local http://minio:9000 \"$${MINIO_ACCESS_KEY}\" \"$${MINIO_SECRET_KEY}\" && break;
+        sleep 1;
+      done &&
+      mc mb --ignore-existing local/workbooks &&
+      mc mb --ignore-existing local/datasets &&
+      mc mb --ignore-existing local/exports &&
+      mc mb --ignore-existing local/attachments &&
+      echo 'Production MinIO buckets verified.'
+      "
+    networks:
+      - davs-prod-net
+
+  backend:
+    build:
+      context: ..
+      dockerfile: infra/backend.Dockerfile
+    container_name: davs-prod-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    environment:
+      APP_NAME: ${APP_NAME:-DAVS}
+      APP_BASE_URL: ${APP_BASE_URL:?APP_BASE_URL must be set (e.g. https://davs.example.com)}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      DB_URL: ${DB_URL:-jdbc:postgresql://postgres:5432/davs}
+      DB_USER: ${DB_USER:-davs}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in production}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY must be set in production}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY must be set in production}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set (min 32 bytes base64)}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY must be set (exact 32 bytes base64)}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?ADMIN_EMAIL must be set}
+      ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:?ADMIN_INITIAL_PASSWORD must be set}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?CORS_ALLOWED_ORIGINS must be set}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@davs.local}
+      VIRUS_SCAN_ENABLED: ${VIRUS_SCAN_ENABLED:-false}
+    # NO ports exposed to host; all traffic goes through TLS reverse proxy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 35s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    networks:
+      - davs-prod-net
+
+  reverse-proxy:
+    build:
+      context: ..
+      dockerfile: infra/frontend.Dockerfile
+    container_name: davs-prod-proxy
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
+      - ${TLS_CERTS_DIR:-./certs}:/etc/nginx/certs:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost/nginx-health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    networks:
+      - davs-prod-net
+
+volumes:
+  pgdata_prod:
+    name: davs_pgdata_prod
+  miniodata_prod:
+    name: davs_miniodata_prod
+
+networks:
+  davs-prod-net:
+    name: davs_prod_network
+    driver: bridge
