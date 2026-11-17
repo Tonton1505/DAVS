@@ -15,19 +15,48 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import lombok.RequiredArgsConstructor;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ExportService {
+
+    private static final UUID DEFAULT_SAMPLE_DATASOURCE_ID =
+            UUID.fromString("00000000-0000-0000-0000-000000000101");
 
     private final JdbcDashboardRepository dashboardRepository;
     private final PermissionService permissionService;
     private final AuditService auditService;
+    private final RowFilterProvider rowFilterProvider;
+
+    public ExportService(
+            JdbcDashboardRepository dashboardRepository,
+            PermissionService permissionService,
+            AuditService auditService
+    ) {
+        this(dashboardRepository, permissionService, auditService, null);
+    }
+
+    @Autowired
+    public ExportService(
+            JdbcDashboardRepository dashboardRepository,
+            PermissionService permissionService,
+            AuditService auditService,
+            RowFilterProvider rowFilterProvider
+    ) {
+        this.dashboardRepository = dashboardRepository;
+        this.permissionService = permissionService;
+        this.auditService = auditService;
+        this.rowFilterProvider = rowFilterProvider;
+    }
 
     public record ExportResult(
             byte[] data,
@@ -69,11 +98,11 @@ public class ExportService {
         String extension;
 
         if ("CSV".equals(fmt)) {
-            payload = generateCsvData(dashboard.name());
+            payload = generateCsvData(dashboard.name(), actor);
             mediaType = new MediaType("text", "csv", StandardCharsets.UTF_8);
             extension = "csv";
         } else if ("XLSX".equals(fmt) || "EXCEL".equals(fmt)) {
-            payload = generateCsvData(dashboard.name()); // lightweight crosstab payload
+            payload = generateCsvData(dashboard.name(), actor); // lightweight crosstab payload
             mediaType = MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             extension = "xlsx";
         } else if ("PDF".equals(fmt)) {
@@ -98,7 +127,26 @@ public class ExportService {
         return new ExportResult(payload, mediaType, filename);
     }
 
-    private byte[] generateCsvData(String title) {
+    private byte[] generateCsvData(String title, DavsUser actor) {
+        String[] months = {"T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"};
+        int[] vals = {82, 96, 105, 118, 126, 138, 148, 156, 172, 188, 205, 240};
+        String[] regions = {
+            "Miền Bắc", "Miền Nam", "Miền Trung", "Miền Bắc",
+            "Miền Nam", "Miền Trung", "Miền Bắc", "Miền Nam",
+            "Miền Bắc", "Miền Trung", "Miền Nam", "Miền Bắc"
+        };
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (int i = 0; i < months.length; i++) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("month", months[i]);
+            row.put("value", vals[i]);
+            row.put("Vung", regions[i]);
+            rows.add(row);
+        }
+        if (rowFilterProvider != null) {
+            rows = rowFilterProvider.applyRowFilters(DEFAULT_SAMPLE_DATASOURCE_ID, actor, rows);
+        }
+
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         // UTF-8 BOM
         baos.write(0xEF);
@@ -107,10 +155,8 @@ public class ExportService {
         PrintWriter pw = new PrintWriter(baos, true, StandardCharsets.UTF_8);
         pw.println("Báo cáo: " + title);
         pw.println("Tháng,Doanh số (triệu VND),Khu vực");
-        String[] months = {"T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"};
-        int[] vals = {82, 96, 105, 118, 126, 138, 148, 156, 172, 188, 205, 240};
-        for (int i = 0; i < months.length; i++) {
-            pw.printf("%s,%d,Toàn quốc%n", months[i], vals[i]);
+        for (Map<String, Object> row : rows) {
+            pw.printf("%s,%s,%s%n", row.get("month"), row.get("value"), row.get("Vung"));
         }
         pw.flush();
         return baos.toByteArray();

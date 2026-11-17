@@ -37,12 +37,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class DashboardService {
 
     public static final int MAX_RECOMMENDED_TILES = 10;
+    private static final UUID DEFAULT_SAMPLE_DATASOURCE_ID =
+            UUID.fromString("00000000-0000-0000-0000-000000000101");
+
     private final VizRepository vizRepository;
     private final JdbcDashboardRepository dashboardRepository;
     private final JdbcWorkbookRepository workbookRepository;
     private final PermissionService permissionService;
     private final AuditService auditService;
     private final ObjectMapper objectMapper;
+    private final RowFilterProvider rowFilterProvider;
 
     @Autowired
     public DashboardService(
@@ -51,7 +55,8 @@ public class DashboardService {
             JdbcWorkbookRepository workbookRepository,
             PermissionService permissionService,
             AuditService auditService,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            RowFilterProvider rowFilterProvider
     ) {
         this.vizRepository = vizRepository;
         this.dashboardRepository = dashboardRepository;
@@ -59,10 +64,11 @@ public class DashboardService {
         this.permissionService = permissionService;
         this.auditService = auditService;
         this.objectMapper = objectMapper;
+        this.rowFilterProvider = rowFilterProvider;
     }
 
     public DashboardService(VizRepository vizRepository) {
-        this(vizRepository, null, null, null, null, null);
+        this(vizRepository, null, null, null, null, null, null);
     }
 
     public DashboardService(
@@ -72,7 +78,18 @@ public class DashboardService {
             AuditService auditService,
             ObjectMapper objectMapper
     ) {
-        this(null, dashboardRepository, workbookRepository, permissionService, auditService, objectMapper);
+        this(null, dashboardRepository, workbookRepository, permissionService, auditService, objectMapper, null);
+    }
+
+    public DashboardService(
+            JdbcDashboardRepository dashboardRepository,
+            JdbcWorkbookRepository workbookRepository,
+            PermissionService permissionService,
+            AuditService auditService,
+            ObjectMapper objectMapper,
+            RowFilterProvider rowFilterProvider
+    ) {
+        this(null, dashboardRepository, workbookRepository, permissionService, auditService, objectMapper, rowFilterProvider);
     }
 
     // =========================================================================
@@ -239,13 +256,23 @@ public class DashboardService {
         List<Map<String, Object>> data = new ArrayList<>();
         int[] baseMonthly = {82, 96, 105, 118, 126, 138, 148, 156, 172, 188, 205, 240};
         String[] months = {"T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"};
+        String[] sampleRegions = {
+            "Miền Bắc", "Miền Nam", "Miền Trung", "Miền Bắc",
+            "Miền Nam", "Miền Trung", "Miền Bắc", "Miền Nam",
+            "Miền Bắc", "Miền Trung", "Miền Nam", "Miền Bắc"
+        };
 
         for (int i = 0; i < months.length; i++) {
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("month", months[i]);
             row.put("value", Math.round(baseMonthly[i] * multiplier));
-            row.put("region", region);
+            row.put("region", "Tất cả vùng".equalsIgnoreCase(region) ? sampleRegions[i] : region);
+            row.put("Vung", "Tất cả vùng".equalsIgnoreCase(region) ? sampleRegions[i] : region);
             data.add(row);
+        }
+
+        if (rowFilterProvider != null) {
+            data = rowFilterProvider.applyRowFilters(DEFAULT_SAMPLE_DATASOURCE_ID, actor, data);
         }
 
         return new QueryResultDto(

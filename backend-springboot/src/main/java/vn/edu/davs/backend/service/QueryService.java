@@ -4,20 +4,33 @@ import vn.edu.davs.backend.dto.QueryResult;
 import vn.edu.davs.backend.dto.QuerySpec;
 import vn.edu.davs.backend.enu.ChartType;
 import vn.edu.davs.backend.enu.ErrorCode;
+import vn.edu.davs.backend.model.DavsUser;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * Query Engine and Chart Type Inference Service (UC15).
+ * Query Engine and Chart Type Inference Service (UC15 & T-101 RLS).
  */
 @Service
 public class QueryService {
 
     public static final int MARKS_WARNING_THRESHOLD = 100_000;
+
+    private final RowFilterProvider rowFilterProvider;
+
+    public QueryService() {
+        this(null);
+    }
+
+    @Autowired
+    public QueryService(RowFilterProvider rowFilterProvider) {
+        this.rowFilterProvider = rowFilterProvider;
+    }
 
     private static final int[] MONTHLY_SALES = {82, 96, 105, 118, 126, 138, 148, 156, 172, 188, 205, 240};
     private static final int[] MONTHLY_PROFIT = {24, 31, 35, 42, 40, 48, 53, 55, 62, 68, 75, 92};
@@ -32,6 +45,10 @@ public class QueryService {
     };
 
     public QueryResult executeQuery(QuerySpec spec) {
+        return executeQuery(spec, null);
+    }
+
+    public QueryResult executeQuery(QuerySpec spec, DavsUser actor) {
         ChartType inferred = inferChartType(spec);
 
         List<String> allFields = new ArrayList<>();
@@ -75,6 +92,10 @@ public class QueryService {
                 }
             }
             rows.add(row);
+        }
+
+        if (rowFilterProvider != null && spec.datasourceId() != null) {
+            rows = rowFilterProvider.applyRowFilters(spec.datasourceId(), actor, rows);
         }
 
         int marksCount = isLarge ? 100_001 : rows.size();

@@ -16,6 +16,7 @@ import {
 } from "../../services/admin-settings.service";
 import ConnectedAppsTab from "./ConnectedAppsTab";
 import IntegrationsTab from "./IntegrationsTab";
+import RowSecurityTab from "./RowSecurityTab";
 
 export default function SettingsPage() {
   const location = useLocation();
@@ -90,6 +91,7 @@ export default function SettingsPage() {
           <TabsTrigger value="general">Chung</TabsTrigger>
           <TabsTrigger value="integrations">Tích hợp</TabsTrigger>
           <TabsTrigger value="apps">Ứng dụng kết nối</TabsTrigger>
+          <TabsTrigger value="rls">Bảo mật dòng (RLS)</TabsTrigger>
           <TabsTrigger value="audit">Nhật ký kiểm toán</TabsTrigger>
         </TabsList>
         <TabsContent value="general" className="pt-6">
@@ -142,6 +144,9 @@ export default function SettingsPage() {
         </TabsContent>
         <TabsContent value="apps" className="pt-6">
           <ConnectedAppsTab />
+        </TabsContent>
+        <TabsContent value="rls" className="pt-6">
+          <RowSecurityTab />
         </TabsContent>
         <TabsContent value="audit" className="pt-6">
           <div className="overflow-hidden rounded-xl border">
