@@ -10,18 +10,26 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * Query Engine and Chart Type Inference Service (UC15 & T-101 RLS).
+ * Query Engine and Chart Type Inference Service (UC15, T-101 RLS & T-103 Query Cache).
  */
 @Service
 public class QueryService {
 
     public static final int MARKS_WARNING_THRESHOLD = 100_000;
+    private static final long CACHE_TTL_MS = 30_000L;
+    private static final int MAX_CACHE_ENTRIES = 500;
 
     private final RowFilterProvider rowFilterProvider;
+    private final Map<String, CachedQueryEntry> queryCache = new ConcurrentHashMap<>();
+
+    private record CachedQueryEntry(QueryResult result, long expiresAtMillis) {
+    }
 
     public QueryService() {
         this(null);
@@ -49,6 +57,17 @@ public class QueryService {
     }
 
     public QueryResult executeQuery(QuerySpec spec, DavsUser actor) {
+        UUID actorId = actor != null ? actor.getId() : null;
+        boolean rlsActive = rowFilterProvider != null
+                && spec.datasourceId() != null
+                && rowFilterProvider.isRlsEnabled(spec.datasourceId());
+        String cacheKey = spec.hashCode() + ":" + actorId + ":" + rlsActive;
+        long now = System.currentTimeMillis();
+        CachedQueryEntry cached = queryCache.get(cacheKey);
+        if (cached != null && cached.expiresAtMillis() > now) {
+            return cached.result();
+        }
+
         ChartType inferred = inferChartType(spec);
 
         List<String> allFields = new ArrayList<>();
@@ -94,12 +113,17 @@ public class QueryService {
             rows.add(row);
         }
 
-        if (rowFilterProvider != null && spec.datasourceId() != null) {
+        if (rlsActive) {
             rows = rowFilterProvider.applyRowFilters(spec.datasourceId(), actor, rows);
         }
 
         int marksCount = isLarge ? 100_001 : rows.size();
-        return new QueryResult(allFields, rows, false, Instant.now(), marksCount, inferred, warning);
+        QueryResult result = new QueryResult(allFields, rows, false, Instant.now(), marksCount, inferred, warning);
+        if (queryCache.size() >= MAX_CACHE_ENTRIES) {
+            queryCache.clear();
+        }
+        queryCache.put(cacheKey, new CachedQueryEntry(result, now + CACHE_TTL_MS));
+        return result;
     }
 
     public ChartType inferChartType(QuerySpec spec) {
