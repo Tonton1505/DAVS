@@ -44,6 +44,7 @@ public class SystemSeedService {
                 "SELECT COUNT(*) FROM users WHERE site_role = 'SITE_ADMIN' AND deleted_at IS NULL",
                 Integer.class);
         if (existingAdmins != null && existingAdmins > 0) {
+            seedDemoUsersIfEnabled();
             log.debug("Initial SITE_ADMIN already exists; skipping bootstrap seed");
             return false;
         }
@@ -98,6 +99,54 @@ public class SystemSeedService {
 
         // Never log initial password or hash.
         log.info("Seeded initial SITE_ADMIN account for email={} (must_change_password=true)", normalizedEmail);
+        seedDemoUsersIfEnabled();
         return true;
+    }
+
+    private void seedDemoUsersIfEnabled() {
+        if (!seedProperties.isDemoUsersEnabled()) {
+            return;
+        }
+        String rawPassword = seedProperties.getAdminInitialPassword();
+        if (rawPassword == null || rawPassword.isBlank()) {
+            return;
+        }
+        String passwordHash = passwordEncoder.encode(rawPassword);
+        seedDemoAccount("creator@davs.local", "Demo Creator", "CREATOR", passwordHash);
+        seedDemoAccount("explorer@davs.local", "Demo Explorer", "EXPLORER", passwordHash);
+        seedDemoAccount("viewer@davs.local", "Demo Viewer", "VIEWER", passwordHash);
+    }
+
+    private void seedDemoAccount(String email, String fullName, String siteRole, String passwordHash) {
+        Integer existing = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM users WHERE lower(email) = lower(?) AND deleted_at IS NULL",
+                Integer.class,
+                email);
+        if (existing != null && existing > 0) {
+            return;
+        }
+        UUID userId = jdbcTemplate.queryForObject("""
+                INSERT INTO users (
+                    email, password_hash, full_name, auth_method,
+                    site_role, status, must_change_password, terms_accepted_at
+                )
+                VALUES (?, ?, ?, 'LOCAL', ?, 'ACTIVE', FALSE, now())
+                RETURNING id
+                """, UUID.class, email, passwordHash, fullName, siteRole);
+        if (userId != null) {
+            jdbcTemplate.update("""
+                    INSERT INTO group_members (group_id, user_id)
+                    SELECT g.id, ?
+                    FROM groups g
+                    WHERE lower(g.name) = lower(?)
+                    ON CONFLICT (group_id, user_id) DO NOTHING
+                    """, userId, ALL_USERS_GROUP);
+            jdbcTemplate.update("""
+                    UPDATE license_pools
+                    SET used = LEAST(total, used + 1), updated_at = now()
+                    WHERE role = ?
+                    """, siteRole);
+            log.info("Seeded demo {} account for email={}", siteRole, email);
+        }
     }
 }

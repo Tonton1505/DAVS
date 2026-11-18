@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Configuration;
 public class SeedProperties {
 
     private boolean enabled = true;
+    private boolean demoUsersEnabled = true;
     private String adminEmail = "admin@davs.local";
     private String adminInitialPassword = "Admin@123456!ChangeMe";
 }

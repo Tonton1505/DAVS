@@ -421,40 +421,48 @@ export default function LoginPage() {
             <div className="grow border-t border-border" />
           </div>
           <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-            <button
-              type="button"
-              disabled={loading}
-              className="rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-muted disabled:opacity-50"
-              onClick={async () => {
-                const isLocal =
-                  window.location.hostname === "localhost" ||
-                  window.location.hostname === "127.0.0.1";
-                const devEmail =
-                  import.meta.env.VITE_DEMO_ADMIN_EMAIL || "admin@davs.local";
-                const devPass =
-                  import.meta.env.VITE_DEMO_ADMIN_PASSWORD ||
-                  (isLocal ? "Admin@123456!ChangeMe" : "Admin@123456!Prod");
-                setEmail(devEmail);
-                setPassword(devPass);
-                setError("");
-                setLoading(true);
-                try {
-                  const response = await authApi.login({
-                    email: devEmail,
-                    password: devPass,
-                    rememberMe: false,
-                  });
-                  handleAuthResponse(response);
-                } catch (err) {
-                  const apiError = extractApiError(err);
-                  setError(apiError?.message || MESSAGES.authInvalid);
-                } finally {
-                  setLoading(false);
-                }
-              }}
-            >
-              Admin
-            </button>
+            {(
+              [
+                { label: "Admin", email: import.meta.env.VITE_DEMO_ADMIN_EMAIL || "admin@davs.local" },
+                { label: "Creator", email: "creator@davs.local" },
+                { label: "Explorer", email: "explorer@davs.local" },
+                { label: "Viewer", email: "viewer@davs.local" },
+              ] as const
+            ).map((demo) => (
+              <button
+                key={demo.label}
+                type="button"
+                disabled={loading}
+                className="rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-muted disabled:opacity-50"
+                onClick={async () => {
+                  const isLocal =
+                    window.location.hostname === "localhost" ||
+                    window.location.hostname === "127.0.0.1";
+                  const devPass =
+                    import.meta.env.VITE_DEMO_ADMIN_PASSWORD ||
+                    (isLocal ? "Admin@123456!ChangeMe" : "Admin@123456!Prod");
+                  setEmail(demo.email);
+                  setPassword(devPass);
+                  setError("");
+                  setLoading(true);
+                  try {
+                    const response = await authApi.login({
+                      email: demo.email,
+                      password: devPass,
+                      rememberMe: false,
+                    });
+                    handleAuthResponse(response);
+                  } catch (err) {
+                    const apiError = extractApiError(err);
+                    setError(apiError?.message || MESSAGES.authInvalid);
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+              >
+                {demo.label}
+              </button>
+            ))}
             {(window.location.hostname === "localhost" ||
               window.location.hostname === "127.0.0.1") && (
               <>
