@@ -15,3 +15,7 @@
 *.md text eol=lf
 *.html text eol=lf
 *.css text eol=lf
+
+# Store frontend public images as regular Git blobs so Vercel clones them without Git LFS
+frontend-react/public/*.png -filter -diff -merge
+frontend-react/public/*.jpg -filter -diff -merge
