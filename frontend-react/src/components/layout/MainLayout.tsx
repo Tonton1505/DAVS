@@ -6,11 +6,11 @@ import { useUIStore } from "../../stores/ui.store";
 export default function MainLayout() {
   const collapsed = useUIStore((s) => s.sidebarCollapsed);
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen overflow-x-hidden bg-background">
       <Header />
       <Sidebar />
       <main
-        className={`min-h-screen pt-14 transition-all ${collapsed ? "lg:pl-16" : "lg:pl-[232px]"}`}
+        className={`min-h-screen min-w-0 pt-14 transition-all ${collapsed ? "lg:pl-16" : "lg:pl-[232px]"}`}
       >
         <div className="mx-auto max-w-[1328px] p-4 sm:p-6">
           <Outlet />

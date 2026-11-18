@@ -7,7 +7,7 @@ test.describe("UC07 – Thiết lập quyền truy cập", () => {
     const page = await loginAsSeedAdmin();
     await page.goto("/projects");
 
-    const firstPermBtn = page.getByRole("button", { name: /Thêm quyền cho/i }).first();
+    const firstPermBtn = page.getByRole("button", { name: /Phân quyền cho/i }).first();
     await expect(firstPermBtn).toBeVisible();
     await firstPermBtn.click();
 

@@ -75,7 +75,7 @@ test.describe("T-106 – Kiểm thử E2E hành trình đầy đủ & kịch b�
     expect(unauthRes.status()).toBe(401);
 
     // 2. Connection test failure -> ERR-DAT-01
-    const badConnRes = await request.post(`${API_BASE}/api/v1/datasources/test-connection`, {
+    const badConnRes = await request.post(`${API_BASE}/api/v1/datasources/test`, {
       headers: { Authorization: `Bearer ${adminToken}` },
       data: {
         connectorType: "POSTGRESQL",
