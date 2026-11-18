@@ -11,7 +11,7 @@
       "destination": "https://davs-backend.onrender.com/actuator/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!.*\\.).*)",
       "destination": "/index.html"
     }
   ]
