@@ -86,3 +86,4 @@ Desktop.ini
 *.md
 !**/README.md
 !.github/pull_request_template.md
+.neon
