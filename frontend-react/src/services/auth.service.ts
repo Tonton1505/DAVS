@@ -14,11 +14,35 @@ export interface AuthUserDto {
 }
 
 export interface AuthTokenResponse {
-  accessToken: string;
+  accessToken: string | null;
   expiresInSeconds: number;
   requiresTermsAcceptance: boolean;
   mustChangePassword: boolean;
   user: AuthUserDto;
+  mfaRequired?: boolean;
+  mfaToken?: string | null;
+}
+
+export interface SsoConfigResponse {
+  oidcEnabled: boolean;
+  providerName: string;
+  mfaEnabled: boolean;
+  mfaRequired: boolean;
+}
+
+export interface OidcAuthorizeResponse {
+  authorizationUrl: string;
+  state: string;
+}
+
+export interface MfaStatusResponse {
+  mfaEnabled: boolean;
+  mfaRequired: boolean;
+}
+
+export interface MfaSetupResponse {
+  secret: string;
+  otpauthUri: string;
 }
 
 export interface LoginPayload {
@@ -59,6 +83,47 @@ export const authApi = {
   },
   async me(): Promise<AuthUserDto> {
     const { data } = await client.get<AuthUserDto>("/v1/auth/me");
+    return data;
+  },
+  async getSsoConfig(): Promise<SsoConfigResponse> {
+    const { data } = await client.get<SsoConfigResponse>("/v1/auth/sso/config");
+    return data;
+  },
+  async getOidcAuthorizeUrl(redirectUri?: string): Promise<OidcAuthorizeResponse> {
+    const { data } = await client.get<OidcAuthorizeResponse>("/v1/auth/oidc/authorize", {
+      params: redirectUri ? { redirectUri } : undefined,
+    });
+    return data;
+  },
+  async oidcCallback(payload: {
+    code: string;
+    state: string;
+    redirectUri?: string;
+  }): Promise<AuthTokenResponse> {
+    const { data } = await client.post<AuthTokenResponse>("/v1/auth/oidc/callback", payload);
+    return data;
+  },
+  async verifyMfa(mfaToken: string, code: string): Promise<AuthTokenResponse> {
+    const { data } = await client.post<AuthTokenResponse>("/v1/auth/mfa/verify", {
+      mfaToken,
+      code,
+    });
+    return data;
+  },
+  async getMfaStatus(): Promise<MfaStatusResponse> {
+    const { data } = await client.get<MfaStatusResponse>("/v1/auth/mfa/status");
+    return data;
+  },
+  async setupMfa(): Promise<MfaSetupResponse> {
+    const { data } = await client.post<MfaSetupResponse>("/v1/auth/mfa/setup", {});
+    return data;
+  },
+  async enableMfa(code: string): Promise<MfaStatusResponse> {
+    const { data } = await client.post<MfaStatusResponse>("/v1/auth/mfa/enable", { code });
+    return data;
+  },
+  async disableMfa(code: string): Promise<MfaStatusResponse> {
+    const { data } = await client.post<MfaStatusResponse>("/v1/auth/mfa/disable", { code });
     return data;
   },
 };

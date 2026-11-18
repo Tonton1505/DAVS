@@ -27,6 +27,10 @@ vi.mock("../../../services/auth.service", async () => {
       refresh: vi.fn(),
       logout: vi.fn(),
       me: vi.fn(),
+      getSsoConfig: vi.fn(),
+      getOidcAuthorizeUrl: vi.fn(),
+      oidcCallback: vi.fn(),
+      verifyMfa: vi.fn(),
     },
   };
 });
@@ -179,5 +183,60 @@ describe("LoginPage (UC01)", () => {
         "Email hoặc mật khẩu không đúng. Vui lòng kiểm tra lại.",
       );
     });
+  });
+
+  it("prompts for 6-digit TOTP code when mfaRequired is true and completes login", async () => {
+    vi.mocked(authApi.login).mockResolvedValue({
+      accessToken: null,
+      expiresInSeconds: 0,
+      requiresTermsAcceptance: false,
+      mustChangePassword: false,
+      mfaRequired: true,
+      mfaToken: "mfa-challenge-token",
+      user: {
+        id: "u3",
+        email: "mfa@davs.local",
+        fullName: "MFA User",
+        siteRole: "EXPLORER",
+        status: "ACTIVE",
+        termsAccepted: true,
+        mustChangePassword: false,
+      },
+    });
+    vi.mocked(authApi.verifyMfa).mockResolvedValue({
+      accessToken: "final-jwt-after-mfa",
+      expiresInSeconds: 900,
+      requiresTermsAcceptance: false,
+      mustChangePassword: false,
+      user: {
+        id: "u3",
+        email: "mfa@davs.local",
+        fullName: "MFA User",
+        siteRole: "EXPLORER",
+        status: "ACTIVE",
+        termsAccepted: true,
+        mustChangePassword: false,
+      },
+    });
+
+    render(
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>,
+    );
+
+    fireEvent.change(screen.getByLabelText(/Email/i), { target: { value: "mfa@davs.local" } });
+    fireEvent.change(screen.getByLabelText(/^Mật khẩu/i), { target: { value: "StrongPass!123" } });
+    fireEvent.click(screen.getByRole("button", { name: "Đăng nhập" }));
+
+    expect(await screen.findByText(/Xác thực hai lớp \(MFA\)/i)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/Mã xác thực/i), { target: { value: "123456" } });
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận" }));
+
+    await waitFor(() => {
+      expect(authApi.verifyMfa).toHaveBeenCalledWith("mfa-challenge-token", "123456");
+      expect(mockNavigate).toHaveBeenCalledWith("/");
+    });
+    expect(useAuthStore.getState().accessToken).toBe("final-jwt-after-mfa");
   });
 });

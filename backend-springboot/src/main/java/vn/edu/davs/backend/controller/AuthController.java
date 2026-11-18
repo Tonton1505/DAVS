@@ -6,6 +6,11 @@ import vn.edu.davs.backend.dto.AuthUserDto;
 import vn.edu.davs.backend.dto.LoginRequest;
 import vn.edu.davs.backend.dto.RefreshRequest;
 import vn.edu.davs.backend.service.AuthService;
+import vn.edu.davs.backend.service.OidcMfaService;
+import vn.edu.davs.backend.service.OidcMfaService.MfaSetupResponse;
+import vn.edu.davs.backend.service.OidcMfaService.MfaStatusResponse;
+import vn.edu.davs.backend.service.OidcMfaService.OidcAuthorizeResponse;
+import vn.edu.davs.backend.service.OidcMfaService.SsoConfigResponse;
 
 import vn.edu.davs.backend.exception.DavsException;
 import vn.edu.davs.backend.enu.ErrorCode;
@@ -14,6 +19,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -23,6 +29,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -36,6 +43,7 @@ public class AuthController {
     public static final String REFRESH_COOKIE_NAME = "davs_refresh_token";
 
     private final AuthService authService;
+    private final OidcMfaService oidcMfaService;
 
     @PostMapping("/login")
     public ResponseEntity<AuthTokenResponse> login(
@@ -45,8 +53,104 @@ public class AuthController {
     ) {
         String clientIp = resolveClientIp(httpRequest);
         AuthService.AuthSessionResult result = authService.login(request, clientIp);
+        if (!result.response().mfaRequired() && result.rawRefreshToken() != null) {
+            addRefreshCookie(httpResponse, result.rawRefreshToken(), result.refreshTtlSeconds(), httpRequest.isSecure());
+        }
+        return ResponseEntity.ok(result.response());
+    }
+
+    @GetMapping("/sso/config")
+    public ResponseEntity<SsoConfigResponse> ssoConfig() {
+        return ResponseEntity.ok(oidcMfaService.getSsoConfig());
+    }
+
+    @GetMapping("/oidc/authorize")
+    public ResponseEntity<OidcAuthorizeResponse> oidcAuthorize(
+            @RequestParam(value = "redirectUri", required = false) String redirectUri
+    ) {
+        return ResponseEntity.ok(oidcMfaService.buildOidcAuthorizeUrl(redirectUri));
+    }
+
+    @PostMapping("/oidc/callback")
+    public ResponseEntity<AuthTokenResponse> oidcCallback(
+            @Valid @RequestBody OidcCallbackRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
+    ) {
+        String clientIp = resolveClientIp(httpRequest);
+        AuthService.AuthSessionResult result = oidcMfaService.handleOidcCallback(
+                request.code(),
+                request.state(),
+                request.redirectUri(),
+                clientIp
+        );
+        if (!result.response().mfaRequired() && result.rawRefreshToken() != null) {
+            addRefreshCookie(httpResponse, result.rawRefreshToken(), result.refreshTtlSeconds(), httpRequest.isSecure());
+        }
+        return ResponseEntity.ok(result.response());
+    }
+
+    @PostMapping("/mfa/verify")
+    public ResponseEntity<AuthTokenResponse> verifyMfa(
+            @Valid @RequestBody MfaVerifyRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
+    ) {
+        String clientIp = resolveClientIp(httpRequest);
+        AuthService.AuthSessionResult result = oidcMfaService.verifyMfaLogin(
+                request.mfaToken(),
+                request.code(),
+                clientIp
+        );
         addRefreshCookie(httpResponse, result.rawRefreshToken(), result.refreshTtlSeconds(), httpRequest.isSecure());
         return ResponseEntity.ok(result.response());
+    }
+
+    @GetMapping("/mfa/status")
+    public ResponseEntity<MfaStatusResponse> mfaStatus(@AuthenticationPrincipal DavsUser principal) {
+        if (principal == null) {
+            throw new DavsException(ErrorCode.ERR_AUTH_05);
+        }
+        return ResponseEntity.ok(oidcMfaService.getMfaStatus(principal.getId()));
+    }
+
+    @PostMapping("/mfa/setup")
+    public ResponseEntity<MfaSetupResponse> setupMfa(@AuthenticationPrincipal DavsUser principal) {
+        if (principal == null) {
+            throw new DavsException(ErrorCode.ERR_AUTH_05);
+        }
+        return ResponseEntity.ok(oidcMfaService.setupMfa(principal.getId()));
+    }
+
+    @PostMapping("/mfa/enable")
+    public ResponseEntity<MfaStatusResponse> enableMfa(
+            @AuthenticationPrincipal DavsUser principal,
+            @Valid @RequestBody MfaCodeRequest request
+    ) {
+        if (principal == null) {
+            throw new DavsException(ErrorCode.ERR_AUTH_05);
+        }
+        return ResponseEntity.ok(oidcMfaService.enableMfa(principal.getId(), request.code()));
+    }
+
+    @PostMapping("/mfa/disable")
+    public ResponseEntity<MfaStatusResponse> disableMfa(
+            @AuthenticationPrincipal DavsUser principal,
+            @Valid @RequestBody MfaCodeRequest request
+    ) {
+        if (principal == null) {
+            throw new DavsException(ErrorCode.ERR_AUTH_05);
+        }
+        return ResponseEntity.ok(oidcMfaService.disableMfa(principal.getId(), request.code()));
+    }
+
+    public record OidcCallbackRequest(@NotBlank String code, @NotBlank String state, String redirectUri) {
+    }
+
+    public record MfaVerifyRequest(@NotBlank String mfaToken, @NotBlank String code) {
+    }
+
+    public record MfaCodeRequest(@NotBlank String code) {
     }
 
     @PostMapping("/accept-terms")

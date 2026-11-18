@@ -110,6 +110,21 @@ davs:
     rate-limit:
       auth-max-requests: ${AUTH_RATE_LIMIT_MAX_REQUESTS:20}
       auth-window-seconds: ${AUTH_RATE_LIMIT_WINDOW_SECONDS:60}
+    oidc:
+      enabled: ${OIDC_ENABLED:false}
+      provider-name: ${OIDC_PROVIDER_NAME:SSO}
+      client-id: ${OIDC_CLIENT_ID:}
+      client-secret: ${OIDC_CLIENT_SECRET:}
+      authorization-uri: ${OIDC_AUTHORIZATION_URI:}
+      token-uri: ${OIDC_TOKEN_URI:}
+      userinfo-uri: ${OIDC_USERINFO_URI:}
+      redirect-uri: ${OIDC_REDIRECT_URI:${APP_BASE_URL:http://localhost:3000}/login/oidc/callback}
+      scopes: ${OIDC_SCOPES:openid email profile}
+    mfa:
+      enabled: ${MFA_ENABLED:true}
+      required: ${MFA_REQUIRED:false}
+      issuer: ${MFA_ISSUER:DAVS}
+      allowed-time-step-drift: ${MFA_TIME_STEP_DRIFT:1}
   seed:
     admin-email: ${ADMIN_EMAIL:admin@davs.local}
     admin-initial-password: ${ADMIN_INITIAL_PASSWORD:Admin@123456!ChangeMe}

@@ -102,12 +102,38 @@ public class AuthService {
         }
 
         authRepository.clearLoginAttempts(email, normalizedIp);
-        authRepository.markLoginTimestamps(user.id(), now);
+        if (securityProperties.getMfa().isEnabled() && authRepository.isMfaEnabled(user.id())) {
+            String mfaToken = jwtService.generateMfaChallengeToken(user.id(), user.email(), request.rememberMe());
+            auditService.log(AuditEvent.of("AUTH_MFA_CHALLENGE", user.id(), user.email(), "USER", user.id().toString()));
+            return new AuthSessionResult(
+                    new AuthTokenResponse(
+                            null,
+                            0L,
+                            !user.termsAccepted(),
+                            user.mustChangePassword(),
+                            user.toDto(),
+                            true,
+                            mfaToken
+                    ),
+                    null,
+                    0L
+            );
+        }
 
-        AuthTokenPair tokens = issueTokens(user, request.rememberMe(), now);
-        auditService.log(AuditEvent.of("AUTH_LOGIN_SUCCESS", user.id(), user.email(), "USER", user.id().toString())
+        return issueSessionForUser(user, request.rememberMe(), now, "AUTH_LOGIN_SUCCESS");
+    }
+
+    public AuthSessionResult issueSessionForUser(
+            AuthUserRecord user,
+            boolean rememberMe,
+            Instant now,
+            String auditAction
+    ) {
+        authRepository.markLoginTimestamps(user.id(), now);
+        AuthTokenPair tokens = issueTokens(user, rememberMe, now);
+        auditService.log(AuditEvent.of(auditAction, user.id(), user.email(), "USER", user.id().toString())
                 .withStates(null, Map.of(
-                        "rememberMe", request.rememberMe(),
+                        "rememberMe", rememberMe,
                         "requiresTermsAcceptance", !user.termsAccepted()
                 )));
         return new AuthSessionResult(
@@ -209,7 +235,7 @@ public class AuthService {
         return user.toDto();
     }
 
-    private boolean isUserPermittedToLogin(AuthUserRecord user) {
+    public boolean isUserPermittedToLogin(AuthUserRecord user) {
         if ("DISABLED".equals(user.status())
                 || "LOCKED".equals(user.status())
                 || "UNINVITED".equals(user.status())) {

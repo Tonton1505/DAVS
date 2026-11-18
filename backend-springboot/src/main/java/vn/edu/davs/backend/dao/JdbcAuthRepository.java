@@ -98,6 +98,103 @@ public class JdbcAuthRepository {
         return new LoginAttemptState(nextCount, lockedUntil);
     }
 
+    public boolean isMfaEnabled(UUID userId) {
+        String sql = """
+                SELECT mfa_enabled
+                FROM users
+                WHERE id = ? AND deleted_at IS NULL
+                """;
+        Boolean enabled = jdbcTemplate.query(sql, (rs, rowNum) -> rs.getBoolean("mfa_enabled"), userId)
+                .stream()
+                .findFirst()
+                .orElse(Boolean.FALSE);
+        return Boolean.TRUE.equals(enabled);
+    }
+
+    public Optional<String> findMfaSecretEncrypted(UUID userId) {
+        String sql = """
+                SELECT mfa_secret_encrypted
+                FROM users
+                WHERE id = ? AND deleted_at IS NULL
+                """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString("mfa_secret_encrypted"), userId)
+                .stream()
+                .filter(s -> s != null && !s.isBlank())
+                .findFirst();
+    }
+
+    public void savePendingMfaSecret(UUID userId, String encryptedSecret, Instant now) {
+        String sql = """
+                UPDATE users
+                SET mfa_secret_encrypted = ?, updated_at = ?
+                WHERE id = ? AND deleted_at IS NULL
+                """;
+        jdbcTemplate.update(sql, encryptedSecret, Timestamp.from(now), userId);
+    }
+
+    public void enableMfa(UUID userId, Instant now) {
+        String sql = """
+                UPDATE users
+                SET mfa_enabled = TRUE, mfa_verified_at = ?, updated_at = ?
+                WHERE id = ? AND deleted_at IS NULL
+                """;
+        Timestamp ts = Timestamp.from(now);
+        jdbcTemplate.update(sql, ts, ts, userId);
+    }
+
+    public void disableMfa(UUID userId, Instant now) {
+        String sql = """
+                UPDATE users
+                SET mfa_enabled = FALSE, mfa_secret_encrypted = NULL, mfa_verified_at = NULL, updated_at = ?
+                WHERE id = ? AND deleted_at IS NULL
+                """;
+        jdbcTemplate.update(sql, Timestamp.from(now), userId);
+    }
+
+    public void linkOidcSubjectIfEmpty(UUID userId, String subject, Instant now) {
+        if (subject == null || subject.isBlank()) {
+            return;
+        }
+        String sql = """
+                UPDATE users
+                SET oidc_subject = COALESCE(oidc_subject, ?), updated_at = ?
+                WHERE id = ? AND deleted_at IS NULL
+                """;
+        jdbcTemplate.update(sql, subject, Timestamp.from(now), userId);
+    }
+
+    public void saveOidcAuthState(String state, String codeVerifier, String redirectUri, Instant expiresAt) {
+        String sql = """
+                INSERT INTO oidc_auth_states (state, code_verifier, redirect_uri, expires_at)
+                VALUES (?, ?, ?, ?)
+                """;
+        jdbcTemplate.update(sql, state, codeVerifier, redirectUri, Timestamp.from(expiresAt));
+    }
+
+    public Optional<OidcAuthStateRecord> consumeOidcAuthState(String state, Instant now) {
+        String selectSql = """
+                SELECT state, code_verifier, redirect_uri, expires_at
+                FROM oidc_auth_states
+                WHERE state = ?
+                """;
+        Optional<OidcAuthStateRecord> found = jdbcTemplate.query(selectSql, (rs, rowNum) -> new OidcAuthStateRecord(
+                rs.getString("state"),
+                rs.getString("code_verifier"),
+                rs.getString("redirect_uri"),
+                rs.getTimestamp("expires_at").toInstant()
+        ), state).stream().findFirst();
+        jdbcTemplate.update("DELETE FROM oidc_auth_states WHERE state = ? OR expires_at < ?", state, Timestamp.from(now));
+        return found.filter(rec -> rec.expiresAt().isAfter(now));
+    }
+
+    public record OidcAuthStateRecord(
+            String state,
+            String codeVerifier,
+            String redirectUri,
+            Instant expiresAt
+    ) {
+    }
+
     public void clearLoginAttempts(String email, String ipAddress) {
         jdbcTemplate.update(
                 "DELETE FROM login_attempts WHERE lower(email) = lower(?) AND ip_address = ?",

@@ -19,6 +19,8 @@ public class SecurityProperties {
     private int sessionTimeoutMinutes = 30;
     private CorsProperties cors = new CorsProperties();
     private RateLimitProperties rateLimit = new RateLimitProperties();
+    private OidcProperties oidc = new OidcProperties();
+    private MfaProperties mfa = new MfaProperties();
 
     @Getter
     @Setter
@@ -35,5 +37,28 @@ public class SecurityProperties {
     public static class RateLimitProperties {
         private int authMaxRequests = 20;
         private int authWindowSeconds = 60;
+    }
+
+    @Getter
+    @Setter
+    public static class OidcProperties {
+        private boolean enabled = false;
+        private String providerName = "SSO";
+        private String clientId = "";
+        private String clientSecret = "";
+        private String authorizationUri = "";
+        private String tokenUri = "";
+        private String userinfoUri = "";
+        private String redirectUri = "http://localhost:3000/login/oidc/callback";
+        private String scopes = "openid email profile";
+    }
+
+    @Getter
+    @Setter
+    public static class MfaProperties {
+        private boolean enabled = true;
+        private boolean required = false;
+        private String issuer = "DAVS";
+        private int allowedTimeStepDrift = 1;
     }
 }

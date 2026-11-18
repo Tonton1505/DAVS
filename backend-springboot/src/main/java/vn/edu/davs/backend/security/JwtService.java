@@ -31,7 +31,10 @@ public class JwtService {
     private static final String CLAIM_FULL_NAME = "fullName";
     private static final String CLAIM_ROLE = "role";
     private static final String CLAIM_TOKEN_TYPE = "type";
+    private static final String CLAIM_REMEMBER_ME = "rememberMe";
     private static final String TOKEN_TYPE_ACCESS = "ACCESS";
+    private static final String TOKEN_TYPE_MFA = "MFA_CHALLENGE";
+    private static final Duration MFA_CHALLENGE_TTL = Duration.ofMinutes(5);
 
     private final SecretKey signingKey;
     private final Duration accessTokenTtl;
@@ -98,6 +101,53 @@ public class JwtService {
         } catch (JwtException | IllegalArgumentException | NullPointerException ex) {
             throw new DavsException(ErrorCode.ERR_AUTH_05, ex);
         }
+    }
+
+    /**
+     * Generates a short-lived MFA challenge token after primary authentication succeeds.
+     */
+    public String generateMfaChallengeToken(UUID userId, String email, boolean rememberMe) {
+        Instant now = clock.instant();
+        Instant expiresAt = now.plus(MFA_CHALLENGE_TTL);
+        return Jwts.builder()
+                .subject(userId.toString())
+                .claim(CLAIM_EMAIL, email)
+                .claim(CLAIM_REMEMBER_ME, rememberMe)
+                .claim(CLAIM_TOKEN_TYPE, TOKEN_TYPE_MFA)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiresAt))
+                .signWith(signingKey, Jwts.SIG.HS256)
+                .compact();
+    }
+
+    /**
+     * Parses and validates an MFA challenge token.
+     */
+    public MfaChallengeClaims parseMfaChallengeToken(String token) {
+        if (token == null || token.isBlank()) {
+            throw new DavsException(ErrorCode.ERR_AUTH_05);
+        }
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(signingKey)
+                    .clock(() -> Date.from(clock.instant()))
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            String tokenType = claims.get(CLAIM_TOKEN_TYPE, String.class);
+            if (!TOKEN_TYPE_MFA.equals(tokenType)) {
+                throw new DavsException(ErrorCode.ERR_AUTH_05);
+            }
+            UUID userId = UUID.fromString(claims.getSubject());
+            String email = claims.get(CLAIM_EMAIL, String.class);
+            Boolean rememberMe = claims.get(CLAIM_REMEMBER_ME, Boolean.class);
+            return new MfaChallengeClaims(userId, email, Boolean.TRUE.equals(rememberMe));
+        } catch (JwtException | IllegalArgumentException | NullPointerException ex) {
+            throw new DavsException(ErrorCode.ERR_AUTH_05, ex);
+        }
+    }
+
+    public record MfaChallengeClaims(UUID userId, String email, boolean rememberMe) {
     }
 
     private static SecretKey resolveSigningKey(String configuredSecret) {

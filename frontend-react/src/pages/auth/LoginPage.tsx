@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Eye, EyeOff, LoaderCircle } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router";
 import { Button, Card, Input, Label } from "../../components/ui";
@@ -9,6 +9,7 @@ import {
   authApi,
   mapSiteRoleToUiRole,
   type AuthTokenResponse,
+  type SsoConfigResponse,
 } from "../../services/auth.service";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -28,17 +29,98 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [pendingActivation, setPendingActivation] = useState<AuthTokenResponse | null>(null);
   const [accepted, setAccepted] = useState(false);
+  const [pendingMfaToken, setPendingMfaToken] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [ssoConfig, setSsoConfig] = useState<SsoConfigResponse | null>(null);
 
   const finishLogin = (authResponse: AuthTokenResponse) => {
     const uiRole = mapSiteRoleToUiRole(authResponse.user.siteRole);
     setSession({
-      accessToken: authResponse.accessToken,
+      accessToken: authResponse.accessToken ?? "",
       role: uiRole,
       name: authResponse.user.fullName || authResponse.user.email,
     });
     const redirectTo = params.get("redirect") || "/";
     nav(redirectTo.startsWith("/") ? redirectTo : "/");
   };
+
+  const handleAuthResponse = (response: AuthTokenResponse) => {
+    if (response.mfaRequired && response.mfaToken) {
+      setPendingMfaToken(response.mfaToken);
+      setMfaCode("");
+      return;
+    }
+    if (response.requiresTermsAcceptance && response.accessToken) {
+      setTokens(response.accessToken);
+      setAccepted(false);
+      setPendingActivation(response);
+      return;
+    }
+    finishLogin(response);
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    Promise.resolve(authApi.getSsoConfig?.())
+      .then((cfg) => {
+        if (mounted && cfg) setSsoConfig(cfg);
+      })
+      .catch(() => {
+        // Ignore if SSO config endpoint is unavailable in isolated unit tests
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const code = params.get("code");
+    const state = params.get("state");
+    if (!code || !state) return;
+
+    let cancelled = false;
+    Promise.resolve()
+      .then(() => {
+        if (!cancelled) {
+          setLoading(true);
+          setError("");
+        }
+        return authApi.oidcCallback({ code, state });
+      })
+      .then((response) => {
+        if (!cancelled) {
+          if (response.mfaRequired && response.mfaToken) {
+            setPendingMfaToken(response.mfaToken);
+            setMfaCode("");
+          } else if (response.requiresTermsAcceptance && response.accessToken) {
+            setTokens(response.accessToken);
+            setAccepted(false);
+            setPendingActivation(response);
+          } else {
+            const uiRole = mapSiteRoleToUiRole(response.user.siteRole);
+            setSession({
+              accessToken: response.accessToken ?? "",
+              role: uiRole,
+              name: response.user.fullName || response.user.email,
+            });
+            const redirectTo = params.get("redirect") || "/";
+            nav(redirectTo.startsWith("/") ? redirectTo : "/");
+          }
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          const apiError = extractApiError(err);
+          setError(apiError?.message || "Đăng nhập SSO thất bại.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [nav, params, setSession, setTokens]);
 
   const submit = async (event?: FormEvent) => {
     event?.preventDefault();
@@ -62,14 +144,7 @@ export default function LoginPage() {
         rememberMe,
       });
 
-      if (response.requiresTermsAcceptance) {
-        setTokens(response.accessToken);
-        setAccepted(false);
-        setPendingActivation(response);
-        return;
-      }
-
-      finishLogin(response);
+      handleAuthResponse(response);
     } catch (err) {
       const apiError = extractApiError(err);
       if (apiError?.message) {
@@ -107,6 +182,98 @@ export default function LoginPage() {
     setAccepted(false);
     setError(MESSAGES.authTerms);
   };
+
+  const handleVerifyMfa = async (event?: FormEvent) => {
+    event?.preventDefault();
+    if (!pendingMfaToken) return;
+    if (!/^\d{6}$/.test(mfaCode.trim())) {
+      setError("Vui lòng nhập mã xác thực 6 chữ số.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      const response = await authApi.verifyMfa(pendingMfaToken, mfaCode.trim());
+      setPendingMfaToken(null);
+      handleAuthResponse(response);
+    } catch (err) {
+      const apiError = extractApiError(err);
+      setError(apiError?.message || "Mã xác thực MFA không đúng.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOidcLogin = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const { authorizationUrl } = await authApi.getOidcAuthorizeUrl();
+      window.location.assign(authorizationUrl);
+    } catch (err) {
+      const apiError = extractApiError(err);
+      setError(apiError?.message || "Không thể khởi tạo đăng nhập SSO.");
+      setLoading(false);
+    }
+  };
+
+  if (pendingMfaToken) {
+    return (
+      <div
+        role="dialog"
+        aria-labelledby="mfa-title"
+        className="flex min-h-screen items-center justify-center bg-muted p-4"
+      >
+        <Card className="w-full max-w-md p-8">
+          <Logo />
+          <h1 id="mfa-title" className="mt-6 text-xl font-semibold">
+            Xác thực hai lớp (MFA)
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Nhập mã TOTP 6 chữ số từ ứng dụng xác thực của bạn.
+          </p>
+          {error && (
+            <div
+              role="alert"
+              className="mt-4 rounded-lg border border-primary-border bg-primary-tint p-3 text-sm text-primary"
+            >
+              {error}
+            </div>
+          )}
+          <form onSubmit={handleVerifyMfa} noValidate>
+            <div className="mt-5">
+              <Label htmlFor="mfa-code" required>
+                Mã xác thực (6 chữ số)
+              </Label>
+              <Input
+                id="mfa-code"
+                inputMode="numeric"
+                maxLength={6}
+                value={mfaCode}
+                onChange={(e) => setMfaCode(e.target.value)}
+                placeholder="123456"
+              />
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <Button
+                type="button"
+                onClick={() => {
+                  setPendingMfaToken(null);
+                  setMfaCode("");
+                  setError("");
+                }}
+              >
+                Quay lại
+              </Button>
+              <Button type="submit" variant="primary" disabled={loading}>
+                {loading && <LoaderCircle className="size-4 animate-spin-slow" />}Xác nhận
+              </Button>
+            </div>
+          </form>
+        </Card>
+      </div>
+    );
+  }
 
   if (pendingActivation) {
     return (
@@ -235,8 +402,13 @@ export default function LoginPage() {
             {loading && <LoaderCircle className="size-4 animate-spin-slow" />}Đăng nhập
           </Button>
         </form>
-        <Button type="button" className="mt-2 w-full">
-          Đăng nhập bằng SSO
+        <Button
+          type="button"
+          className="mt-2 w-full"
+          disabled={loading || ssoConfig?.oidcEnabled === false}
+          onClick={handleOidcLogin}
+        >
+          {ssoConfig?.providerName ? `Đăng nhập bằng ${ssoConfig.providerName}` : "Đăng nhập bằng SSO"}
         </Button>
       </Card>
     </div>
