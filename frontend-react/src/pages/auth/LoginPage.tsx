@@ -414,69 +414,80 @@ export default function LoginPage() {
           {ssoConfig?.providerName ? `Đăng nhập bằng ${ssoConfig.providerName}` : "Đăng nhập bằng SSO"}
         </Button>
 
-        {(window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && (
-          <div className="mt-6">
-            <div className="relative flex items-center py-2">
-              <div className="grow border-t border-border" />
-              <span className="mx-3 shrink text-xs text-muted-foreground">Tài khoản Demo</span>
-              <div className="grow border-t border-border" />
-            </div>
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-              <button
-                type="button"
-                disabled={loading}
-                className="rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-muted disabled:opacity-50"
-                onClick={async () => {
-                  const devEmail = "admin@davs.local";
-                  const devPass = "Admin@123456!ChangeMe";
-                  setEmail(devEmail);
-                  setPassword(devPass);
-                  setError("");
-                  setLoading(true);
-                  try {
-                    const response = await authApi.login({
-                      email: devEmail,
-                      password: devPass,
-                      rememberMe: false,
-                    });
-                    handleAuthResponse(response);
-                  } catch (err) {
-                    const apiError = extractApiError(err);
-                    setError(apiError?.message || MESSAGES.authInvalid);
-                  } finally {
-                    setLoading(false);
-                  }
-                }}
-              >
-                Admin
-              </button>
-              <a
-                href="http://localhost:9001"
-                target="_blank"
-                rel="noreferrer"
-                title="Copy user/pass và mở MinIO Console"
-                className="rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-muted"
-                onClick={() => {
-                  navigator.clipboard?.writeText("davs_minio_admin / davs_minio_secret_change_me");
-                }}
-              >
-                MinIO
-              </a>
-              <button
-                type="button"
-                title="Copy chuỗi kết nối PostgreSQL"
-                className="rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-muted"
-                onClick={() => {
-                  navigator.clipboard?.writeText(
-                    "postgresql://davs:davs_secret_password_change_me@localhost:5432/davs",
-                  );
-                }}
-              >
-                PostgreSQL
-              </button>
-            </div>
+        <div className="mt-6">
+          <div className="relative flex items-center py-2">
+            <div className="grow border-t border-border" />
+            <span className="mx-3 shrink text-xs text-muted-foreground">Tài khoản Demo</span>
+            <div className="grow border-t border-border" />
           </div>
-        )}
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              disabled={loading}
+              className="rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-muted disabled:opacity-50"
+              onClick={async () => {
+                const isLocal =
+                  window.location.hostname === "localhost" ||
+                  window.location.hostname === "127.0.0.1";
+                const devEmail =
+                  import.meta.env.VITE_DEMO_ADMIN_EMAIL || "admin@davs.local";
+                const devPass =
+                  import.meta.env.VITE_DEMO_ADMIN_PASSWORD ||
+                  (isLocal ? "Admin@123456!ChangeMe" : "Admin@123456!Prod");
+                setEmail(devEmail);
+                setPassword(devPass);
+                setError("");
+                setLoading(true);
+                try {
+                  const response = await authApi.login({
+                    email: devEmail,
+                    password: devPass,
+                    rememberMe: false,
+                  });
+                  handleAuthResponse(response);
+                } catch (err) {
+                  const apiError = extractApiError(err);
+                  setError(apiError?.message || MESSAGES.authInvalid);
+                } finally {
+                  setLoading(false);
+                }
+              }}
+            >
+              Admin
+            </button>
+            {(window.location.hostname === "localhost" ||
+              window.location.hostname === "127.0.0.1") && (
+              <>
+                <a
+                  href="http://localhost:9001"
+                  target="_blank"
+                  rel="noreferrer"
+                  title="Copy user/pass và mở MinIO Console"
+                  className="rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-muted"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(
+                      "davs_minio_admin / davs_minio_secret_change_me",
+                    );
+                  }}
+                >
+                  MinIO
+                </a>
+                <button
+                  type="button"
+                  title="Copy chuỗi kết nối PostgreSQL"
+                  className="rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-muted"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(
+                      "postgresql://davs:davs_secret_password_change_me@localhost:5432/davs",
+                    );
+                  }}
+                >
+                  PostgreSQL
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       </Card>
     </div>
   );
