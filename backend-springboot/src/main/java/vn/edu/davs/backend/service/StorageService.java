@@ -110,7 +110,7 @@ public class StorageService {
         try {
             return minioClient.getObject(
                     GetObjectArgs.builder()
-                            .bucket(bucket.getBucketName())
+                            .bucket(resolveBucketName(bucket))
                             .object(objectKey)
                             .build()
             );
@@ -128,7 +128,7 @@ public class StorageService {
         try {
             minioClient.removeObject(
                     RemoveObjectArgs.builder()
-                            .bucket(bucket.getBucketName())
+                            .bucket(resolveBucketName(bucket))
                             .object(objectKey)
                             .build()
             );
@@ -146,7 +146,7 @@ public class StorageService {
         try {
             minioClient.statObject(
                     StatObjectArgs.builder()
-                            .bucket(bucket.getBucketName())
+                            .bucket(resolveBucketName(bucket))
                             .object(objectKey)
                             .build()
             );
@@ -176,7 +176,7 @@ public class StorageService {
             return minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .method(Method.GET)
-                            .bucket(bucket.getBucketName())
+                            .bucket(resolveBucketName(bucket))
                             .object(objectKey)
                             .expiry(seconds, TimeUnit.SECONDS)
                             .build()
@@ -218,7 +218,7 @@ public class StorageService {
     ) throws Exception {
         minioClient.putObject(
                 PutObjectArgs.builder()
-                        .bucket(bucket.getBucketName())
+                        .bucket(resolveBucketName(bucket))
                         .object(objectKey)
                         .stream(stream, sizeBytes, -1)
                         .contentType(contentType)
@@ -230,12 +230,20 @@ public class StorageService {
         if (initializedBuckets.contains(bucket)) {
             return;
         }
-        String name = bucket.getBucketName();
+        String name = resolveBucketName(bucket);
         boolean exists = minioClient.bucketExists(BucketExistsArgs.builder().bucket(name).build());
         if (!exists) {
             minioClient.makeBucket(MakeBucketArgs.builder().bucket(name).build());
         }
         initializedBuckets.add(bucket);
+    }
+
+    private String resolveBucketName(Bucket bucket) {
+        String prefix = storageProperties.getBucketPrefix();
+        if (prefix == null || prefix.isBlank()) {
+            return bucket.getBucketName();
+        }
+        return prefix.trim() + bucket.getBucketName();
     }
 
     private static byte[] readHeaderBytes(BufferedInputStream stream) throws IOException {

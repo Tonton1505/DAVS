@@ -94,6 +94,7 @@ davs:
     endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
     access-key: ${MINIO_ACCESS_KEY:davs_minio_admin}
     secret-key: ${MINIO_SECRET_KEY:davs_minio_secret_change_me}
+    bucket-prefix: ${MINIO_BUCKET_PREFIX:}
     virus-scan-enabled: ${VIRUS_SCAN_ENABLED:false}
     presign-expiry-minutes: ${MINIO_PRESIGN_EXPIRY_MINUTES:15}
   security:
