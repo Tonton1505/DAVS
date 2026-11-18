@@ -225,8 +225,7 @@ export default function LoginPage() {
         className="flex min-h-screen items-center justify-center bg-muted p-4"
       >
         <Card className="w-full max-w-md p-8">
-          <Logo />
-          <h1 id="mfa-title" className="mt-6 text-xl font-semibold">
+          <h1 id="mfa-title" className="text-center text-xl font-semibold">
             Xác thực hai lớp (MFA)
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -283,8 +282,7 @@ export default function LoginPage() {
         className="flex min-h-screen items-center justify-center bg-muted p-4"
       >
         <Card className="w-full max-w-md p-8">
-          <Logo />
-          <h1 id="terms-title" className="mt-6 text-xl font-semibold">
+          <h1 id="terms-title" className="text-center text-xl font-semibold">
             Điều khoản sử dụng
           </h1>
           <div className="mt-4 h-48 overflow-y-auto rounded-lg border bg-muted p-4 text-sm leading-6 text-muted-foreground">
@@ -329,13 +327,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted p-4">
-      <Card className="w-full max-w-md p-8">
-        <Logo />
-        <h1 className="mt-7 text-2xl font-semibold text-ink">Đăng nhập</h1>
-        <div className="mt-1 text-sm text-muted-foreground">
-          Tiếp tục đến không gian phân tích Công ty ABC
-        </div>
+    <div
+      className="relative flex min-h-screen items-center justify-center bg-cover bg-center bg-no-repeat p-4"
+      style={{ backgroundImage: "url('/login-bg.jpg')" }}
+    >
+      <div className="absolute inset-0 bg-black/25" aria-hidden="true" />
+      <Card className="relative z-10 w-full max-w-md bg-white/95 p-8 shadow-xl backdrop-blur-sm">
+        <img
+          src="/vju-logo.png"
+          alt="Vietnam Japan University"
+          className="mx-auto mb-4 size-20 object-contain"
+        />
+        <h1 className="text-center text-2xl font-semibold text-ink">Đăng nhập</h1>
         {params.get("error") === "expired" && (
           <div
             role="status"
@@ -410,17 +413,71 @@ export default function LoginPage() {
         >
           {ssoConfig?.providerName ? `Đăng nhập bằng ${ssoConfig.providerName}` : "Đăng nhập bằng SSO"}
         </Button>
-      </Card>
-    </div>
-  );
-}
 
-function Logo() {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="size-3 bg-primary" />
-      <span className="text-xl font-bold tracking-wide text-ink">DAVS</span>
-      <span className="text-xs text-muted-foreground">Phân tích & Trực quan hóa dữ liệu</span>
+        {(window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && (
+          <div className="mt-6">
+            <div className="relative flex items-center py-2">
+              <div className="grow border-t border-border" />
+              <span className="mx-3 shrink text-xs text-muted-foreground">Tài khoản Demo</span>
+              <div className="grow border-t border-border" />
+            </div>
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+              <button
+                type="button"
+                disabled={loading}
+                className="rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-muted disabled:opacity-50"
+                onClick={async () => {
+                  const devEmail = "admin@davs.local";
+                  const devPass = "Admin@123456!ChangeMe";
+                  setEmail(devEmail);
+                  setPassword(devPass);
+                  setError("");
+                  setLoading(true);
+                  try {
+                    const response = await authApi.login({
+                      email: devEmail,
+                      password: devPass,
+                      rememberMe: false,
+                    });
+                    handleAuthResponse(response);
+                  } catch (err) {
+                    const apiError = extractApiError(err);
+                    setError(apiError?.message || MESSAGES.authInvalid);
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+              >
+                Admin
+              </button>
+              <a
+                href="http://localhost:9001"
+                target="_blank"
+                rel="noreferrer"
+                title="Copy user/pass và mở MinIO Console"
+                className="rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-muted"
+                onClick={() => {
+                  navigator.clipboard?.writeText("davs_minio_admin / davs_minio_secret_change_me");
+                }}
+              >
+                MinIO
+              </a>
+              <button
+                type="button"
+                title="Copy chuỗi kết nối PostgreSQL"
+                className="rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-muted"
+                onClick={() => {
+                  navigator.clipboard?.writeText(
+                    "postgresql://davs:davs_secret_password_change_me@localhost:5432/davs",
+                  );
+                }}
+              >
+                PostgreSQL
+              </button>
+            </div>
+          </div>
+        )}
+      </Card>
     </div>
   );
 }
