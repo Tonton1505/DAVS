@@ -453,6 +453,21 @@ export default function LoginPage() {
                     });
                     handleAuthResponse(response);
                   } catch (err) {
+                    if (isLocal) {
+                      const roleMap: Record<string, "admin" | "creator" | "explorer" | "viewer"> = {
+                        Admin: "admin",
+                        Creator: "creator",
+                        Explorer: "explorer",
+                        Viewer: "viewer",
+                      };
+                      setSession({
+                        accessToken: "mock-dev-token",
+                        role: roleMap[demo.label] || "viewer",
+                        name: `${demo.label} (Demo)`,
+                      });
+                      nav("/");
+                      return;
+                    }
                     const apiError = extractApiError(err);
                     setError(apiError?.message || MESSAGES.authInvalid);
                   } finally {
