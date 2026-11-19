@@ -61,6 +61,8 @@ export default function LoginPage() {
 
   useEffect(() => {
     let mounted = true;
+    // Pre-warm Render backend on login page load so cold-starts finish faster
+    fetch("/actuator/health").catch(() => {});
     Promise.resolve(authApi.getSsoConfig?.())
       .then((cfg) => {
         if (mounted && cfg) setSsoConfig(cfg);

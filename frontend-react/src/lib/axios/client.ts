@@ -20,7 +20,7 @@ export const authRedirect = {
 
 const client = axios.create({
   baseURL: "/api",
-  timeout: 15_000,
+  timeout: 90_000,
   withCredentials: true,
 });
 
