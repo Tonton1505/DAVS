@@ -437,12 +437,8 @@ export default function LoginPage() {
                 disabled={loading}
                 className="rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-muted disabled:opacity-50"
                 onClick={async () => {
-                  const isLocal =
-                    window.location.hostname === "localhost" ||
-                    window.location.hostname === "127.0.0.1";
                   const devPass =
-                    import.meta.env.VITE_DEMO_ADMIN_PASSWORD ||
-                    (isLocal ? "Admin@123456!ChangeMe" : "Admin@123456!Prod");
+                    import.meta.env.VITE_DEMO_ADMIN_PASSWORD || "Admin@123456!ChangeMe";
                   setEmail(demo.email);
                   setPassword(devPass);
                   setError("");

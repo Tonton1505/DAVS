@@ -107,22 +107,34 @@ public class SystemSeedService {
         if (!seedProperties.isDemoUsersEnabled()) {
             return;
         }
-        String rawPassword = seedProperties.getAdminInitialPassword();
-        if (rawPassword == null || rawPassword.isBlank()) {
-            return;
-        }
-        String passwordHash = passwordEncoder.encode(rawPassword);
-        seedDemoAccount("creator@davs.local", "Demo Creator", "CREATOR", passwordHash);
-        seedDemoAccount("explorer@davs.local", "Demo Explorer", "EXPLORER", passwordHash);
-        seedDemoAccount("viewer@davs.local", "Demo Viewer", "VIEWER", passwordHash);
+        jdbcTemplate.update("DELETE FROM login_attempts WHERE lower(email) = 'admin@davs.local'");
+        jdbcTemplate.update("""
+                UPDATE users
+                SET terms_accepted_at = COALESCE(terms_accepted_at, now()),
+                    must_change_password = FALSE
+                WHERE lower(email) = 'admin@davs.local' AND deleted_at IS NULL
+                """);
+        String demoPasswordHash = passwordEncoder.encode("Admin@123456!ChangeMe");
+        seedDemoAccount("creator@davs.local", "Demo Creator", "CREATOR", demoPasswordHash);
+        seedDemoAccount("explorer@davs.local", "Demo Explorer", "EXPLORER", demoPasswordHash);
+        seedDemoAccount("viewer@davs.local", "Demo Viewer", "VIEWER", demoPasswordHash);
     }
 
     private void seedDemoAccount(String email, String fullName, String siteRole, String passwordHash) {
+        jdbcTemplate.update("DELETE FROM login_attempts WHERE lower(email) = lower(?)", email);
         Integer existing = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM users WHERE lower(email) = lower(?) AND deleted_at IS NULL",
                 Integer.class,
                 email);
         if (existing != null && existing > 0) {
+            jdbcTemplate.update("""
+                    UPDATE users
+                    SET password_hash = ?,
+                        status = 'ACTIVE',
+                        terms_accepted_at = COALESCE(terms_accepted_at, now()),
+                        updated_at = now()
+                    WHERE lower(email) = lower(?) AND deleted_at IS NULL
+                    """, passwordHash, email);
             return;
         }
         UUID userId = jdbcTemplate.queryForObject("""
