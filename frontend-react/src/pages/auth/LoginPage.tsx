@@ -465,7 +465,8 @@ export default function LoginPage() {
                         role: roleMap[demo.label] || "viewer",
                         name: `${demo.label} (Demo)`,
                       });
-                      nav("/");
+                      const redirectTo = params.get("redirect") || "/";
+                      nav(redirectTo.startsWith("/") ? redirectTo : "/");
                       return;
                     }
                     const apiError = extractApiError(err);

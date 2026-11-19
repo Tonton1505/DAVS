@@ -39,7 +39,10 @@ import ComponentsDemoPage from "./pages/dev/ComponentsDemoPage";
 function Guard() {
   const role = useAuthStore((s) => s.role),
     loc = useLocation();
-  if (!role) return <Navigate to="/login" replace />;
+  if (!role) {
+    const redirectParam = loc.pathname && loc.pathname !== "/" ? `?redirect=${encodeURIComponent(loc.pathname + loc.search)}` : "";
+    return <Navigate to={`/login${redirectParam}`} replace />;
+  }
   const rule = routeAccess.find(([re]) => re.test(loc.pathname));
   if (rule && !roleCan(role, rule[1])) return <Navigate to="/403" replace />;
   return <Outlet />;
