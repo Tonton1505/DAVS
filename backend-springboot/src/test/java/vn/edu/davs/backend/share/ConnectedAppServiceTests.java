@@ -1,5 +1,7 @@
 package vn.edu.davs.backend.share;
 
+
+import vn.edu.davs.backend.service.impl.ConnectedAppServiceImpl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -52,7 +54,7 @@ class ConnectedAppServiceTests {
         permissionService = mock(PermissionService.class);
         auditService = mock(AuditService.class);
         objectMapper = new ObjectMapper();
-        connectedAppService = new ConnectedAppService(jdbcTemplate, permissionService, auditService, objectMapper);
+        connectedAppService = new ConnectedAppServiceImpl(jdbcTemplate, permissionService, auditService, objectMapper);
 
         adminUser = DavsUser.of(
                 UUID.randomUUID(),

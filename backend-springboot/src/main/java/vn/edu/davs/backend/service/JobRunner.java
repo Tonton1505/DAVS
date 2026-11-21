@@ -1,6 +1,7 @@
 package vn.edu.davs.backend.service;
 
 import vn.edu.davs.backend.config.JobProperties;
+import vn.edu.davs.backend.service.impl.JobQueueServiceImpl;
 import vn.edu.davs.backend.model.JobRecord;
 
 import java.sql.Timestamp;
@@ -113,7 +114,7 @@ public class JobRunner {
                     RETURNING j.id, j.type, j.payload::text AS payload_text, j.status, j.run_at,
                               j.attempts, j.max_attempts, j.last_error,
                               j.locked_at, j.locked_by, j.created_at, j.updated_at, j.created_by
-                    """, Map.of("workerId", workerId), JobQueueService.ROW_MAPPER);
+                    """, Map.of("workerId", workerId), JobQueueServiceImpl.ROW_MAPPER);
             return claimed.stream().findFirst();
         });
     }

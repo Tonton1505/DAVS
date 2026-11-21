@@ -1,6 +1,6 @@
 package vn.edu.davs.backend.auth;
 
-import vn.edu.davs.backend.controller.AuthController;
+import vn.edu.davs.backend.rest.AuthRest;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -107,7 +107,7 @@ class AuthIntegrationTests {
 
         JsonNode loginBody = objectMapper.readTree(loginResult.getResponse().getContentAsString());
         String accessToken = loginBody.path("accessToken").asText();
-        Cookie refreshCookie = loginResult.getResponse().getCookie(AuthController.REFRESH_COOKIE_NAME);
+        Cookie refreshCookie = loginResult.getResponse().getCookie(AuthRest.REFRESH_COOKIE_NAME);
         assertThat(refreshCookie).isNotNull();
         assertThat(refreshCookie.isHttpOnly()).isTrue();
         assertThat(refreshCookie.getValue()).isNotBlank();
@@ -125,7 +125,7 @@ class AuthIntegrationTests {
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
                 .andReturn();
 
-        Cookie rotatedCookie = refreshResult.getResponse().getCookie(AuthController.REFRESH_COOKIE_NAME);
+        Cookie rotatedCookie = refreshResult.getResponse().getCookie(AuthRest.REFRESH_COOKIE_NAME);
         assertThat(rotatedCookie).isNotNull();
         assertThat(rotatedCookie.getValue()).isNotEqualTo(refreshCookie.getValue());
 

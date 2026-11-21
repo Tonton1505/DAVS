@@ -1,5 +1,7 @@
 package vn.edu.davs.backend.viz;
 
+
+import vn.edu.davs.backend.service.impl.ParameterServiceImpl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -27,7 +29,7 @@ class ParameterServiceTests {
     @BeforeEach
     void setUp() {
         vizRepository = mock(VizRepository.class);
-        parameterService = new ParameterService(vizRepository);
+        parameterService = new ParameterServiceImpl(vizRepository);
     }
 
     @Test

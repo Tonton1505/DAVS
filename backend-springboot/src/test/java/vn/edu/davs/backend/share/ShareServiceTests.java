@@ -1,5 +1,7 @@
 package vn.edu.davs.backend.share;
 
+
+import vn.edu.davs.backend.service.impl.ShareServiceImpl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -49,7 +51,7 @@ class ShareServiceTests {
         permissionService = mock(PermissionService.class);
         notificationService = mock(NotificationService.class);
         auditService = mock(AuditService.class);
-        shareService = new ShareService(jdbcTemplate, permissionService, notificationService, auditService);
+        shareService = new ShareServiceImpl(jdbcTemplate, permissionService, notificationService, auditService);
 
         creatorUser = DavsUser.of(
                 UUID.randomUUID(),

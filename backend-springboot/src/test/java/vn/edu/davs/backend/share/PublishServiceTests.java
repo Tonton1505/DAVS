@@ -1,5 +1,7 @@
 package vn.edu.davs.backend.share;
 
+
+import vn.edu.davs.backend.service.impl.PublishServiceImpl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -46,7 +48,7 @@ class PublishServiceTests {
         permissionService = mock(PermissionService.class);
         auditService = mock(AuditService.class);
         objectMapper = new ObjectMapper();
-        publishService = new PublishService(jdbcTemplate, permissionService, auditService, objectMapper);
+        publishService = new PublishServiceImpl(jdbcTemplate, permissionService, auditService, objectMapper);
 
         creatorUser = DavsUser.of(
                 UUID.randomUUID(),

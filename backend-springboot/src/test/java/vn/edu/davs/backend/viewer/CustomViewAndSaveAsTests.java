@@ -1,11 +1,13 @@
 package vn.edu.davs.backend.viewer;
 
+
+import vn.edu.davs.backend.service.impl.CustomViewServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import vn.edu.davs.backend.exception.DavsException;
-import vn.edu.davs.backend.dao.JdbcCustomViewRepository;
-import vn.edu.davs.backend.dao.JdbcDashboardRepository;
-import vn.edu.davs.backend.dao.JdbcProjectRepository;
-import vn.edu.davs.backend.dao.JdbcWorkbookRepository;
+import vn.edu.davs.backend.dao.ICustomViewDao;
+import vn.edu.davs.backend.dao.IDashboardDao;
+import vn.edu.davs.backend.dao.IProjectDao;
+import vn.edu.davs.backend.dao.IWorkbookDao;
 import vn.edu.davs.backend.dto.CreateCustomViewRequest;
 import vn.edu.davs.backend.dto.CustomViewDto;
 import vn.edu.davs.backend.dto.DashboardDto;
@@ -43,13 +45,13 @@ import static org.mockito.Mockito.when;
 class CustomViewAndSaveAsTests {
 
     @Mock
-    private JdbcCustomViewRepository customViewRepository;
+    private ICustomViewDao customViewRepository;
     @Mock
-    private JdbcDashboardRepository dashboardRepository;
+    private IDashboardDao dashboardRepository;
     @Mock
-    private JdbcWorkbookRepository workbookRepository;
+    private IWorkbookDao workbookRepository;
     @Mock
-    private JdbcProjectRepository projectRepository;
+    private IProjectDao projectRepository;
     @Mock
     private PermissionService permissionService;
     @Mock
@@ -64,7 +66,7 @@ class CustomViewAndSaveAsTests {
 
     @BeforeEach
     void setUp() {
-        customViewService = new CustomViewService(
+        customViewService = new CustomViewServiceImpl(
                 customViewRepository,
                 dashboardRepository,
                 workbookRepository,
@@ -152,7 +154,7 @@ class CustomViewAndSaveAsTests {
         );
         when(permissionService.can(eq(author), eq(Capability.PUBLISH), any(ResourceRef.class))).thenReturn(true);
 
-        JdbcWorkbookRepository.WorkbookRow source = new JdbcWorkbookRepository.WorkbookRow(
+        IWorkbookDao.WorkbookRow source = new IWorkbookDao.WorkbookRow(
                 sourceWbId, UUID.randomUUID(), "Project", "Source", "Desc", 1, author.getId(), "Author",
                 "IMPORTED", false, 1024L, "source.twbx", Instant.now(), Instant.now()
         );
@@ -163,7 +165,7 @@ class CustomViewAndSaveAsTests {
                 eq(author.getId()), anyString(), eq(false)))
                 .thenReturn(copyWbId);
 
-        JdbcWorkbookRepository.WorkbookRow copyRow = new JdbcWorkbookRepository.WorkbookRow(
+        IWorkbookDao.WorkbookRow copyRow = new IWorkbookDao.WorkbookRow(
                 copyWbId, targetProjId, "Project", "Workbook Copy", "Mô tả copy", 1, author.getId(), "Author",
                 "IMPORTED", false, 1024L, "copy.twbx", Instant.now(), Instant.now()
         );

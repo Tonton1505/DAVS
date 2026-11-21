@@ -1,9 +1,11 @@
 package vn.edu.davs.backend.viewer;
 
+
+import vn.edu.davs.backend.service.impl.DashboardServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import vn.edu.davs.backend.exception.DavsException;
-import vn.edu.davs.backend.dao.JdbcDashboardRepository;
-import vn.edu.davs.backend.dao.JdbcWorkbookRepository;
+import vn.edu.davs.backend.dao.IDashboardDao;
+import vn.edu.davs.backend.dao.IWorkbookDao;
 import vn.edu.davs.backend.dto.DashboardDto;
 import vn.edu.davs.backend.dto.DashboardViewDto;
 import vn.edu.davs.backend.dto.QueryRequest;
@@ -36,9 +38,9 @@ import static org.mockito.Mockito.when;
 class DashboardViewTests {
 
     @Mock
-    private JdbcDashboardRepository dashboardRepository;
+    private IDashboardDao dashboardRepository;
     @Mock
-    private JdbcWorkbookRepository workbookRepository;
+    private IWorkbookDao workbookRepository;
     @Mock
     private PermissionService permissionService;
     @Mock
@@ -52,7 +54,7 @@ class DashboardViewTests {
 
     @BeforeEach
     void setUp() {
-        dashboardService = new DashboardService(
+        dashboardService = new DashboardServiceImpl(
                 dashboardRepository,
                 workbookRepository,
                 permissionService,

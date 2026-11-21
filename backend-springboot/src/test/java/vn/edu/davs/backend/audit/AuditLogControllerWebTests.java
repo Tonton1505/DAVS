@@ -1,10 +1,14 @@
 package vn.edu.davs.backend.audit;
 
-import vn.edu.davs.backend.controller.AuditLogController;
+
+
+import vn.edu.davs.backend.rest.impl.AuditLogRestImpl;
+import vn.edu.davs.backend.service.impl.AuditServiceImpl;
+import vn.edu.davs.backend.service.impl.PermissionServiceImpl;
+import vn.edu.davs.backend.service.impl.SettingsServiceImpl;
 import vn.edu.davs.backend.dao.AuditLogStore;
 import vn.edu.davs.backend.dto.AuditLogFilter;
 import vn.edu.davs.backend.dto.AuditLogResponse;
-import vn.edu.davs.backend.service.AuditService;
 import vn.edu.davs.backend.service.SensitiveDataMasker;
 
 import vn.edu.davs.backend.dto.PageResponse;
@@ -21,7 +25,6 @@ import vn.edu.davs.backend.config.SecurityProperties;
 import vn.edu.davs.backend.enu.SiteRole;
 import vn.edu.davs.backend.security.UserActivityService;
 import vn.edu.davs.backend.service.SettingsService;
-import vn.edu.davs.backend.service.PermissionService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
@@ -47,7 +50,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = AuditLogController.class)
+@WebMvcTest(controllers = AuditLogRestImpl.class)
 @Import({
         SecurityConfig.class,
         JwtService.class,
@@ -57,8 +60,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         DavsAuthenticationEntryPoint.class,
         DavsAccessDeniedHandler.class,
         SecurityErrorResponseWriter.class,
-        PermissionService.class,
-        AuditService.class,
+        PermissionServiceImpl.class,
+        AuditServiceImpl.class,
         SensitiveDataMasker.class,
         AuditLogControllerWebTests.StubConfig.class
 })
@@ -141,7 +144,7 @@ class AuditLogControllerWebTests {
         @Bean
         @Primary
         SettingsService stubSettingsService(SecurityProperties props) {
-            return new SettingsService(new JdbcTemplate(), props) {
+            return new SettingsServiceImpl(new JdbcTemplate(), props) {
                 @Override
                 public Duration getSessionTimeout() {
                     return Duration.ofMinutes(30);

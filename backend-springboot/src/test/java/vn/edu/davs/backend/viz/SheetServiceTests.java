@@ -1,5 +1,7 @@
 package vn.edu.davs.backend.viz;
 
+
+import vn.edu.davs.backend.service.impl.SheetServiceImpl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -31,7 +33,7 @@ class SheetServiceTests {
     @BeforeEach
     void setUp() {
         vizRepository = mock(VizRepository.class);
-        sheetService = new SheetService(vizRepository);
+        sheetService = new SheetServiceImpl(vizRepository);
     }
 
     @Test

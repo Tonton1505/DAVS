@@ -1,8 +1,14 @@
 package vn.edu.davs.backend.perf;
 
+
+
+
+import vn.edu.davs.backend.service.impl.DashboardServiceImpl;
+import vn.edu.davs.backend.service.impl.ExportServiceImpl;
+import vn.edu.davs.backend.service.impl.QueryServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import vn.edu.davs.backend.dao.JdbcDashboardRepository;
-import vn.edu.davs.backend.dao.JdbcWorkbookRepository;
+import vn.edu.davs.backend.dao.IDashboardDao;
+import vn.edu.davs.backend.dao.IWorkbookDao;
 import vn.edu.davs.backend.dto.DashboardDto;
 import vn.edu.davs.backend.dto.ExportRequest;
 import vn.edu.davs.backend.dto.QueryRequest;
@@ -42,7 +48,7 @@ class PerformanceBenchmarkTests {
         UUID dsId = UUID.fromString("00000000-0000-0000-0000-000000000101");
         when(rls.isRlsEnabled(dsId)).thenReturn(false);
 
-        QueryService queryService = new QueryService(rls);
+        QueryService queryService = new QueryServiceImpl(rls);
         DavsUser actor = DavsUser.of(UUID.randomUUID(), "explorer@davs.vn", "Explorer", SiteRole.EXPLORER);
         QuerySpec spec = new QuerySpec(
                 dsId,
@@ -67,8 +73,8 @@ class PerformanceBenchmarkTests {
 
     @Test
     void dashboardInteractiveQueryAndCsvExportMeetLatencyTargets() {
-        JdbcDashboardRepository dashRepo = mock(JdbcDashboardRepository.class);
-        JdbcWorkbookRepository wbRepo = mock(JdbcWorkbookRepository.class);
+        IDashboardDao dashRepo = mock(IDashboardDao.class);
+        IWorkbookDao wbRepo = mock(IWorkbookDao.class);
         PermissionService perm = mock(PermissionService.class);
         AuditService audit = mock(AuditService.class);
 
@@ -79,10 +85,10 @@ class PerformanceBenchmarkTests {
                 dashId, UUID.randomUUID(), "Perf Dashboard", null, "{}", null, Instant.now(), Instant.now()
         )));
 
-        DashboardService dashboardService = new DashboardService(
+        DashboardService dashboardService = new DashboardServiceImpl(
                 dashRepo, wbRepo, perm, audit, new ObjectMapper()
         );
-        ExportService exportService = new ExportService(dashRepo, perm, audit);
+        ExportService exportService = new ExportServiceImpl(dashRepo, perm, audit);
         DavsUser viewer = DavsUser.of(UUID.randomUUID(), "viewer@davs.vn", "Viewer", SiteRole.VIEWER);
 
         long startQuery = System.currentTimeMillis();

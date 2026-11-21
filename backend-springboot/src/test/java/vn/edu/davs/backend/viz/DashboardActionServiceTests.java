@@ -1,5 +1,7 @@
 package vn.edu.davs.backend.viz;
 
+
+import vn.edu.davs.backend.service.impl.DashboardActionServiceImpl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -31,7 +33,7 @@ class DashboardActionServiceTests {
     @BeforeEach
     void setUp() {
         vizRepository = mock(VizRepository.class);
-        actionService = new DashboardActionService(vizRepository);
+        actionService = new DashboardActionServiceImpl(vizRepository);
     }
 
     @Test

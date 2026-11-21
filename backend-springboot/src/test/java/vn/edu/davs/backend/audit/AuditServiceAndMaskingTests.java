@@ -1,5 +1,7 @@
 package vn.edu.davs.backend.audit;
 
+
+import vn.edu.davs.backend.service.impl.AuditServiceImpl;
 import vn.edu.davs.backend.dao.AuditLogStore;
 import vn.edu.davs.backend.dto.AuditEvent;
 import vn.edu.davs.backend.dto.AuditLogFilter;
@@ -35,7 +37,7 @@ class AuditServiceAndMaskingTests {
     void setUp() {
         masker = new SensitiveDataMasker(new ObjectMapper());
         store = new CapturingAuditLogStore();
-        auditService = new AuditService(store, masker);
+        auditService = new AuditServiceImpl(store, masker);
     }
 
     @AfterEach

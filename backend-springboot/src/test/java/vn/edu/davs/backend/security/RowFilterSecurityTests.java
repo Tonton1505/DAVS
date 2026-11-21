@@ -1,9 +1,17 @@
 package vn.edu.davs.backend.security;
 
+
+
+
+
+import vn.edu.davs.backend.service.impl.DashboardServiceImpl;
+import vn.edu.davs.backend.service.impl.RowFilterServiceImpl;
+import vn.edu.davs.backend.service.impl.ExportServiceImpl;
+import vn.edu.davs.backend.service.impl.QueryServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import vn.edu.davs.backend.dao.JdbcDashboardRepository;
-import vn.edu.davs.backend.dao.JdbcRowFilterRepository;
-import vn.edu.davs.backend.dao.JdbcWorkbookRepository;
+import vn.edu.davs.backend.dao.IDashboardDao;
+import vn.edu.davs.backend.dao.IRowFilterDao;
+import vn.edu.davs.backend.dao.IWorkbookDao;
 import vn.edu.davs.backend.dto.DashboardDto;
 import vn.edu.davs.backend.dto.ExportRequest;
 import vn.edu.davs.backend.dto.QueryRequest;
@@ -49,7 +57,7 @@ class RowFilterSecurityTests {
     private static final UUID SAMPLE_DS_ID =
             UUID.fromString("00000000-0000-0000-0000-000000000101");
 
-    private JdbcRowFilterRepository rowFilterRepository;
+    private IRowFilterDao rowFilterRepository;
     private PermissionService permissionService;
     private AuditService auditService;
     private RowFilterService rowFilterService;
@@ -60,10 +68,10 @@ class RowFilterSecurityTests {
 
     @BeforeEach
     void setUp() {
-        rowFilterRepository = mock(JdbcRowFilterRepository.class);
+        rowFilterRepository = mock(IRowFilterDao.class);
         permissionService = mock(PermissionService.class);
         auditService = mock(AuditService.class);
-        rowFilterService = new RowFilterService(rowFilterRepository, permissionService, auditService);
+        rowFilterService = new RowFilterServiceImpl(rowFilterRepository, permissionService, auditService);
 
         northUser = DavsUser.of(UUID.randomUUID(), "north@davs.vn", "North Viewer", SiteRole.VIEWER);
         southUser = DavsUser.of(UUID.randomUUID(), "south@davs.vn", "South Viewer", SiteRole.VIEWER);
@@ -80,7 +88,7 @@ class RowFilterSecurityTests {
 
     @Test
     void twoUsersWithDifferentMappingsSeeDifferentDatasetsInQueryDashboardAndExport() {
-        QueryService queryService = new QueryService(rowFilterService);
+        QueryService queryService = new QueryServiceImpl(rowFilterService);
         QuerySpec spec = new QuerySpec(
                 SAMPLE_DS_ID,
                 List.of("Vung"),
@@ -100,9 +108,9 @@ class RowFilterSecurityTests {
         assertThat(southQuery.rows()).allMatch(r -> "Miền Nam".equals(r.get("Vung")));
 
         // Dashboard View query enforcement
-        JdbcDashboardRepository dashRepo = mock(JdbcDashboardRepository.class);
-        JdbcWorkbookRepository wbRepo = mock(JdbcWorkbookRepository.class);
-        DashboardService dashboardService = new DashboardService(
+        IDashboardDao dashRepo = mock(IDashboardDao.class);
+        IWorkbookDao wbRepo = mock(IWorkbookDao.class);
+        DashboardService dashboardService = new DashboardServiceImpl(
                 dashRepo, wbRepo, permissionService, auditService, new ObjectMapper(), rowFilterService
         );
         UUID dashId = UUID.randomUUID();
@@ -123,7 +131,7 @@ class RowFilterSecurityTests {
         assertThat(southDash.data()).allMatch(r -> "Miền Nam".equals(r.get("Vung")));
 
         // Export CSV enforcement
-        ExportService exportService = new ExportService(dashRepo, permissionService, auditService, rowFilterService);
+        ExportService exportService = new ExportServiceImpl(dashRepo, permissionService, auditService, rowFilterService);
         DashboardDto dashDto = new DashboardDto(
                 dashId, UUID.randomUUID(), "Doanh số 2026", null, "{}", null, Instant.now(), Instant.now()
         );
@@ -147,7 +155,7 @@ class RowFilterSecurityTests {
 
     @Test
     void craftedQuerySpecCannotBypassRlsAndUnmappedUserGetsNoRows() {
-        QueryService queryService = new QueryService(rowFilterService);
+        QueryService queryService = new QueryServiceImpl(rowFilterService);
         // Attack attempt: northUser sends crafted filters asking for Miền Nam or bypass flag
         QuerySpec craftedAttackSpec = new QuerySpec(
                 SAMPLE_DS_ID,

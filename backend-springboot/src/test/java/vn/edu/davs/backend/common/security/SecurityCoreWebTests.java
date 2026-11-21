@@ -14,7 +14,7 @@ import vn.edu.davs.backend.security.SecurityErrorResponseWriter;
 import vn.edu.davs.backend.config.SecurityConfig;
 import vn.edu.davs.backend.security.UserActivityService;
 import vn.edu.davs.backend.security.UserActivityService.UserSessionSnapshot;
-import vn.edu.davs.backend.service.SettingsService;
+import vn.edu.davs.backend.service.impl.SettingsServiceImpl;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
@@ -239,7 +239,7 @@ class SecurityCoreWebTests {
         }
     }
 
-    static class StubSettingsService extends SettingsService {
+    static class StubSettingsService extends SettingsServiceImpl {
         private int timeoutMinutes = 30;
 
         StubSettingsService(SecurityProperties securityProperties) {

@@ -1,6 +1,6 @@
 package vn.edu.davs.backend.service;
 
-import vn.edu.davs.backend.dao.JdbcUserCreationRepository;
+import vn.edu.davs.backend.dao.IUserCreationDao;
 import vn.edu.davs.backend.enu.AuthMethod;
 
 import vn.edu.davs.backend.dto.AuditEvent;
@@ -23,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ImportUsersJobHandler implements JobHandler {
 
-    private final JdbcUserCreationRepository repository;
+    private final IUserCreationDao repository;
     private final UserCreationService userCreationService;
     private final AuditService auditService;
     private final ObjectMapper objectMapper;

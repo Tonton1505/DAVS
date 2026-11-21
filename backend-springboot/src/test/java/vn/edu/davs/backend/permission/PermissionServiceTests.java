@@ -1,5 +1,7 @@
 package vn.edu.davs.backend.permission;
 
+
+import vn.edu.davs.backend.service.impl.PermissionServiceImpl;
 import vn.edu.davs.backend.dao.GroupMembershipProvider;
 import vn.edu.davs.backend.dao.PermissionRuleStore;
 import vn.edu.davs.backend.dao.ResourceMetadataResolver;
@@ -58,7 +60,7 @@ class PermissionServiceTests {
         groupProvider = new InMemoryGroupProvider();
         metadataStore = new InMemoryMetadataStore();
 
-        permissionService = new PermissionService(
+        permissionService = new PermissionServiceImpl(
                 ruleStore,
                 groupProvider,
                 List.of(

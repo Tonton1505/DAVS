@@ -1,17 +1,27 @@
 package vn.edu.davs.backend.security;
 
+
+
+
+
+
+
+
+
+
+
+import vn.edu.davs.backend.rest.AdminSettingsRest;
+import vn.edu.davs.backend.rest.ConnectedAppRest;
+import vn.edu.davs.backend.rest.DashboardRest;
+import vn.edu.davs.backend.rest.FormulaRest;
+import vn.edu.davs.backend.rest.GroupRest;
+import vn.edu.davs.backend.rest.ParameterRest;
+import vn.edu.davs.backend.rest.RowFilterRest;
+import vn.edu.davs.backend.rest.SheetRest;
+import vn.edu.davs.backend.rest.UserCreationRest;
+import vn.edu.davs.backend.rest.UserManagementRest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import vn.edu.davs.backend.controller.AdminSettingsController;
-import vn.edu.davs.backend.controller.ConnectedAppController;
-import vn.edu.davs.backend.controller.DashboardController;
-import vn.edu.davs.backend.controller.FormulaController;
-import vn.edu.davs.backend.controller.GroupController;
-import vn.edu.davs.backend.controller.ParameterController;
-import vn.edu.davs.backend.controller.RowFilterController;
-import vn.edu.davs.backend.controller.SheetController;
-import vn.edu.davs.backend.controller.UserCreationController;
-import vn.edu.davs.backend.controller.UserManagementController;
 import vn.edu.davs.backend.dto.SaveRowFilterRequest;
 import vn.edu.davs.backend.dto.SaveSheetRequest;
 import vn.edu.davs.backend.dto.UpdateSettingsRequest;
@@ -51,16 +61,16 @@ class SecurityAuthorizationAuditTests {
     @Test
     void allWriteEndpointsEnforcePreAuthorizeOrActorPermissionChecks() {
         List<Class<?>> controllers = List.of(
-                AdminSettingsController.class,
-                ConnectedAppController.class,
-                DashboardController.class,
-                FormulaController.class,
-                GroupController.class,
-                ParameterController.class,
-                RowFilterController.class,
-                SheetController.class,
-                UserCreationController.class,
-                UserManagementController.class
+                AdminSettingsRest.class,
+                ConnectedAppRest.class,
+                DashboardRest.class,
+                FormulaRest.class,
+                GroupRest.class,
+                ParameterRest.class,
+                RowFilterRest.class,
+                SheetRest.class,
+                UserCreationRest.class,
+                UserManagementRest.class
         );
 
         for (Class<?> controller : controllers) {
@@ -84,19 +94,19 @@ class SecurityAuthorizationAuditTests {
 
     @Test
     void adminAndAuthoringWriteEndpointsBlockViewerViaPreAuthorize() throws NoSuchMethodException {
-        PreAuthorize settingsPut = AdminSettingsController.class
+        PreAuthorize settingsPut = AdminSettingsRest.class
                 .getDeclaredMethod("updateSettings", DavsUser.class, UpdateSettingsRequest.class)
                 .getAnnotation(PreAuthorize.class);
         assertThat(settingsPut).isNotNull();
         assertThat(settingsPut.value()).contains("SITE_ADMIN");
 
-        PreAuthorize rlsPost = RowFilterController.class
+        PreAuthorize rlsPost = RowFilterRest.class
                 .getDeclaredMethod("saveRowFilter", SaveRowFilterRequest.class, DavsUser.class)
                 .getAnnotation(PreAuthorize.class);
         assertThat(rlsPost).isNotNull();
         assertThat(rlsPost.value()).contains("SITE_ADMIN");
 
-        PreAuthorize sheetPost = SheetController.class
+        PreAuthorize sheetPost = SheetRest.class
                 .getDeclaredMethod("createSheet", UUID.class, SaveSheetRequest.class)
                 .getAnnotation(PreAuthorize.class);
         assertThat(sheetPost).isNotNull();

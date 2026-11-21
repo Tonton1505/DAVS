@@ -1,0 +1,169 @@
+package vn.edu.davs.backend.service.impl;
+
+import vn.edu.davs.backend.config.SeedProperties;
+import java.util.Locale;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import vn.edu.davs.backend.service.SystemSeedService;
+
+@Slf4j
+@RequiredArgsConstructor
+@Service
+public class SystemSeedServiceImpl implements SystemSeedService {
+
+
+    private static final String ALL_USERS_GROUP = "All Users";
+
+    private static final String DEFAULT_PROJECT = "Default";
+
+
+    private final JdbcTemplate jdbcTemplate;
+
+    private final PasswordEncoder passwordEncoder;
+
+    private final SeedProperties seedProperties;
+
+
+    /**
+     * Seeds the initial {@code SITE_ADMIN} user if no active {@code SITE_ADMIN} exists yet.
+     * Re-running this method never creates duplicates or overwrites existing records.
+     *
+     * @return {@code true} if a new initial admin was created, {@code false} if skipped
+     */
+    @Transactional
+    @Override
+    public boolean seedIfNeeded() {
+        if (!seedProperties.isEnabled()) {
+            log.debug("System seeding is disabled via davs.seed.enabled=false");
+            return false;
+        }
+
+        Integer existingAdmins = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM users WHERE site_role = 'SITE_ADMIN' AND deleted_at IS NULL",
+                Integer.class);
+        if (existingAdmins != null && existingAdmins > 0) {
+            seedDemoUsersIfEnabled();
+            log.debug("Initial SITE_ADMIN already exists; skipping bootstrap seed");
+            return false;
+        }
+
+        String rawEmail = seedProperties.getAdminEmail();
+        String rawPassword = seedProperties.getAdminInitialPassword();
+        if (rawEmail == null || rawEmail.isBlank()) {
+            throw new IllegalStateException("ADMIN_EMAIL / davs.seed.admin-email must not be blank");
+        }
+        if (rawPassword == null || rawPassword.isBlank()) {
+            throw new IllegalStateException("ADMIN_INITIAL_PASSWORD / davs.seed.admin-initial-password must not be blank");
+        }
+
+        String normalizedEmail = rawEmail.trim().toLowerCase(Locale.ROOT);
+        String passwordHash = passwordEncoder.encode(rawPassword);
+
+        UUID adminId = jdbcTemplate.queryForObject("""
+                INSERT INTO users (
+                    email, password_hash, full_name, auth_method,
+                    site_role, status, must_change_password
+                )
+                VALUES (?, ?, 'Site Administrator', 'LOCAL', 'SITE_ADMIN', 'ACTIVE', TRUE)
+                RETURNING id
+                """, UUID.class, normalizedEmail, passwordHash);
+
+        if (adminId == null) {
+            throw new IllegalStateException("Failed to insert initial SITE_ADMIN user");
+        }
+
+        jdbcTemplate.update("""
+                INSERT INTO group_members (group_id, user_id)
+                SELECT g.id, ?
+                FROM groups g
+                WHERE lower(g.name) = lower(?)
+                ON CONFLICT (group_id, user_id) DO NOTHING
+                """, adminId, ALL_USERS_GROUP);
+
+        jdbcTemplate.update("""
+                UPDATE projects
+                SET owner_id = ?, updated_at = now()
+                WHERE parent_id IS NULL
+                  AND deleted_at IS NULL
+                  AND lower(name) = lower(?)
+                  AND owner_id IS NULL
+                """, adminId, DEFAULT_PROJECT);
+
+        jdbcTemplate.update("""
+                UPDATE license_pools
+                SET used = LEAST(total, used + 1), updated_at = now()
+                WHERE role = 'SITE_ADMIN'
+                """);
+
+        // Never log initial password or hash.
+        log.info("Seeded initial SITE_ADMIN account for email={} (must_change_password=true)", normalizedEmail);
+        seedDemoUsersIfEnabled();
+        return true;
+    }
+
+
+    private void seedDemoUsersIfEnabled() {
+        if (!seedProperties.isDemoUsersEnabled()) {
+            return;
+        }
+        jdbcTemplate.update("DELETE FROM login_attempts WHERE lower(email) = 'admin@davs.local'");
+        jdbcTemplate.update("""
+                UPDATE users
+                SET terms_accepted_at = COALESCE(terms_accepted_at, now()),
+                    must_change_password = FALSE
+                WHERE lower(email) = 'admin@davs.local' AND deleted_at IS NULL
+                """);
+        String demoPasswordHash = passwordEncoder.encode("Admin@123456!ChangeMe");
+        seedDemoAccount("creator@davs.local", "Demo Creator", "CREATOR", demoPasswordHash);
+        seedDemoAccount("explorer@davs.local", "Demo Explorer", "EXPLORER", demoPasswordHash);
+        seedDemoAccount("viewer@davs.local", "Demo Viewer", "VIEWER", demoPasswordHash);
+    }
+
+
+    private void seedDemoAccount(String email, String fullName, String siteRole, String passwordHash) {
+        jdbcTemplate.update("DELETE FROM login_attempts WHERE lower(email) = lower(?)", email);
+        Integer existing = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM users WHERE lower(email) = lower(?) AND deleted_at IS NULL",
+                Integer.class,
+                email);
+        if (existing != null && existing > 0) {
+            jdbcTemplate.update("""
+                    UPDATE users
+                    SET password_hash = ?,
+                        status = 'ACTIVE',
+                        terms_accepted_at = COALESCE(terms_accepted_at, now()),
+                        updated_at = now()
+                    WHERE lower(email) = lower(?) AND deleted_at IS NULL
+                    """, passwordHash, email);
+            return;
+        }
+        UUID userId = jdbcTemplate.queryForObject("""
+                INSERT INTO users (
+                    email, password_hash, full_name, auth_method,
+                    site_role, status, must_change_password, terms_accepted_at
+                )
+                VALUES (?, ?, ?, 'LOCAL', ?, 'ACTIVE', FALSE, now())
+                RETURNING id
+                """, UUID.class, email, passwordHash, fullName, siteRole);
+        if (userId != null) {
+            jdbcTemplate.update("""
+                    INSERT INTO group_members (group_id, user_id)
+                    SELECT g.id, ?
+                    FROM groups g
+                    WHERE lower(g.name) = lower(?)
+                    ON CONFLICT (group_id, user_id) DO NOTHING
+                    """, userId, ALL_USERS_GROUP);
+            jdbcTemplate.update("""
+                    UPDATE license_pools
+                    SET used = LEAST(total, used + 1), updated_at = now()
+                    WHERE role = ?
+                    """, siteRole);
+            log.info("Seeded demo {} account for email={}", siteRole, email);
+        }
+    }
+}
