@@ -124,4 +124,100 @@ describe("WorkbookUploadPage (UC08)", () => {
       );
     });
   });
+
+  it("allows uploading Excel/CSV files and displays interactive data analysis", async () => {
+    vi.mocked(workbookService.upload).mockResolvedValueOnce({
+      id: "wb-excel-1",
+      projectId: "p1",
+      projectName: "Dự án Sales",
+      name: "doanh_thu_q4",
+      description: null,
+      currentVersion: 1,
+      ownerId: "u1",
+      ownerName: "Creator",
+      importStatus: "IMPORTED",
+      needsReconnect: false,
+      sizeBytes: 512,
+      fileName: "doanh_thu_q4.csv",
+      labels: [],
+      createdAt: "2026-01-01T00:00:00Z",
+      updatedAt: "2026-01-01T00:00:00Z",
+    });
+
+    render(
+      <MemoryRouter>
+        <WorkbookUploadPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(projectService.list).toHaveBeenCalled());
+
+    const csvContent = "Vùng,Doanh thu,Đơn hàng\nMiền Bắc,1500,12\nMiền Nam,2500,18";
+    const excelCsvFile = new File([csvContent], "doanh_thu_q4.csv", {
+      type: "text/csv",
+    });
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(fileInput.getAttribute("accept")).toContain(".xlsx");
+    expect(fileInput.getAttribute("accept")).toContain(".xls");
+    expect(fileInput.getAttribute("accept")).toContain(".csv");
+
+    fireEvent.change(fileInput, { target: { files: [excelCsvFile] } });
+
+    expect(await screen.findByDisplayValue("doanh_thu_q4")).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Phân tích dữ liệu Excel \(UC08\)/i),
+    ).toBeInTheDocument();
+
+    // Data preview table renders parsed rows and column selectors
+    expect(await screen.findByText("Miền Bắc")).toBeInTheDocument();
+    expect(screen.getByText("Miền Nam")).toBeInTheDocument();
+    expect(screen.getByLabelText(/Chiều phân tích/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Chỉ số đo lường/i)).toBeInTheDocument();
+
+    // Filter rows via table search
+    const searchInput = screen.getByLabelText(/Tìm kiếm trong bảng dữ liệu/i);
+    fireEvent.change(searchInput, { target: { value: "Miền Bắc" } });
+    expect(screen.getByText("Miền Bắc")).toBeInTheDocument();
+    expect(screen.queryByText("Miền Nam")).not.toBeInTheDocument();
+
+    // Upload Excel file calls API and preserves analysis view
+    const uploadBtn = screen.getByRole("button", {
+      name: /Tải lên & Phân tích Excel/i,
+    });
+    fireEvent.click(uploadBtn);
+
+    await waitFor(() => {
+      expect(workbookService.upload).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: "doanh_thu_q4",
+          file: excelCsvFile,
+        }),
+      );
+      expect(
+        screen.getByRole("button", { name: /Lịch sử phiên bản/i }),
+      ).toBeInTheDocument();
+    });
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it("supports selecting .xlsx workbook files for Excel analysis", async () => {
+    render(
+      <MemoryRouter>
+        <WorkbookUploadPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(projectService.list).toHaveBeenCalled());
+
+    const xlsxFile = new File([new Uint8Array([0x50, 0x4b, 0x03, 0x04])], "bao_cao_2026.xlsx", {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [xlsxFile] } });
+
+    expect(await screen.findByDisplayValue("bao_cao_2026")).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Phân tích dữ liệu Excel \(UC08\)/i),
+    ).toBeInTheDocument();
+  });
 });

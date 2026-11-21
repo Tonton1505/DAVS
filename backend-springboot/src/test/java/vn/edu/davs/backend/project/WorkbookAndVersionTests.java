@@ -107,9 +107,9 @@ class WorkbookAndVersionTests {
     void uc08UploadWorkbookValidatesFormatPermissionDuplicateAndVirusScan() {
         MockMultipartFile invalidExt = new MockMultipartFile(
                 "file",
-                "report.xlsx",
+                "report.exe",
                 "application/octet-stream",
-                "<workbook/>".getBytes(StandardCharsets.UTF_8)
+                "MZ".getBytes(StandardCharsets.UTF_8)
         );
 
         // [5a] Invalid extension -> ERR-PRJ-04
@@ -196,6 +196,85 @@ class WorkbookAndVersionTests {
                 .extracting(ex -> ((DavsException) ex).getErrorCode())
                 .isEqualTo(ErrorCode.ERR_PRJ_08);
         verify(auditService).log(any());
+    }
+
+    @Test
+    void uc08UploadExcelWorkbookSucceeds() {
+        byte[] xlsxBytes = new byte[]{'P', 'K', 0x03, 0x04, 0x14, 0x00};
+        MockMultipartFile excelFile = new MockMultipartFile(
+                "file",
+                "sales_data.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                xlsxBytes
+        );
+        UUID wbId = UUID.randomUUID();
+        JdbcWorkbookRepository.WorkbookRow savedRow = new JdbcWorkbookRepository.WorkbookRow(
+                wbId,
+                projectId,
+                "Default",
+                "sales_data",
+                "Excel sales",
+                1,
+                creatorId,
+                "Creator",
+                "IMPORTED",
+                false,
+                (long) xlsxBytes.length,
+                "sales_data.xlsx",
+                Instant.now(),
+                Instant.now()
+        );
+
+        when(workbookRepository.findActiveByProjectAndName(projectId, "sales_data"))
+                .thenReturn(Optional.empty());
+        when(storageService.put(eq(Bucket.WORKBOOKS), anyString(), anyString(), any(), any(), anyLong()))
+                .thenReturn(new StoredObject(
+                        Bucket.WORKBOOKS,
+                        "projects/" + projectId + "/sales_data.xlsx",
+                        "sales_data.xlsx",
+                        xlsxBytes.length,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ));
+        when(workbookRepository.insertWorkbook(
+                eq(projectId),
+                eq("sales_data"),
+                eq("Excel sales"),
+                eq(creatorId),
+                anyString(),
+                eq(false)
+        )).thenReturn(wbId);
+        when(workbookRepository.findById(wbId)).thenReturn(Optional.of(savedRow));
+        when(workbookRepository.toDto(savedRow)).thenReturn(new WorkbookDto(
+                wbId,
+                projectId,
+                "Default",
+                "sales_data",
+                "Excel sales",
+                1,
+                creatorId,
+                "Creator",
+                "IMPORTED",
+                false,
+                (long) xlsxBytes.length,
+                "sales_data.xlsx",
+                List.of(),
+                Instant.now(),
+                Instant.now()
+        ));
+
+        WorkbookDto result = workbookService.uploadWorkbook(
+                projectId,
+                null,
+                "Excel sales",
+                false,
+                "Upload Excel",
+                excelFile,
+                creator
+        );
+
+        assertThat(result.name()).isEqualTo("sales_data");
+        assertThat(result.fileName()).isEqualTo("sales_data.xlsx");
+        assertThat(result.currentVersion()).isEqualTo(1);
     }
 
     @Test
