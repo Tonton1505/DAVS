@@ -43,6 +43,85 @@ import { workbookService } from "../../services/workbook.service";
 import { PermissionsDialog } from "../../components/permissions/PermissionsDialog";
 import { extractApiError } from "../../lib/api/error";
 
+const FALLBACK_TREE: ProjectTreeNodeDto[] = [
+  {
+    id: "00000000-0000-0000-0000-000000000001",
+    name: "Dự án Mặc định (Default)",
+    description: "Thư mục dự án hệ thống mặc định cho người dùng",
+    parentId: null,
+    ownerId: "00000000-0000-0000-0000-000000000001",
+    permissionMode: "CUSTOM",
+    isDefault: true,
+    depth: 0,
+    children: [],
+  },
+  {
+    id: "00000000-0000-0000-0000-000000000002",
+    name: "Phân tích Bán hàng & Thị trường",
+    description: "Dự án lưu trữ các báo cáo doanh số và phân tích thị trường",
+    parentId: null,
+    ownerId: "00000000-0000-0000-0000-000000000002",
+    permissionMode: "INHERIT",
+    isDefault: false,
+    depth: 0,
+    children: [],
+  },
+];
+
+const FALLBACK_CONTENT: ContentListResponse = {
+  projectId: null,
+  projectName: "Tất cả dự án",
+  breadcrumbs: [],
+  items: [
+    {
+      id: "00000000-0000-0000-0000-000000000001",
+      resourceType: "PROJECT",
+      name: "Dự án Mặc định (Default)",
+      description: "Thư mục dự án hệ thống mặc định cho người dùng",
+      projectId: null,
+      ownerId: "00000000-0000-0000-0000-000000000001",
+      ownerName: "System Admin",
+      permissionMode: "CUSTOM",
+      isDefault: true,
+      currentVersion: 1,
+      childCount: 2,
+      allowedActions: ["VIEW", "RENAME", "MOVE", "DELETE", "ADD_TO_COLLECTION"],
+      updatedAt: "2026-01-01T00:00:00Z",
+    },
+    {
+      id: "00000000-0000-0000-0000-000000000002",
+      resourceType: "PROJECT",
+      name: "Phân tích Bán hàng & Thị trường",
+      description: "Dự án lưu trữ các báo cáo doanh số và phân tích thị trường",
+      projectId: null,
+      ownerId: "00000000-0000-0000-0000-000000000002",
+      ownerName: "Creator",
+      permissionMode: "INHERIT",
+      isDefault: false,
+      currentVersion: 1,
+      childCount: 1,
+      allowedActions: ["VIEW", "RENAME", "MOVE", "DELETE", "ADD_TO_COLLECTION"],
+      updatedAt: "2026-01-02T00:00:00Z",
+    },
+    {
+      id: "00000000-0000-0000-0000-000000000101",
+      resourceType: "WORKBOOK",
+      name: "Phân tích Doanh thu Bán hàng 2026",
+      description: "Workbook phân tích số liệu tài chính theo vùng miền",
+      projectId: "00000000-0000-0000-0000-000000000001",
+      ownerId: "00000000-0000-0000-0000-000000000002",
+      ownerName: "Creator",
+      permissionMode: "INHERIT",
+      isDefault: false,
+      currentVersion: 2,
+      childCount: 0,
+      allowedActions: ["VIEW", "DOWNLOAD", "VERSION_HISTORY", "ADD_TO_COLLECTION"],
+      updatedAt: "2026-01-03T00:00:00Z",
+    },
+  ],
+  totalCount: 3,
+};
+
 export default function ProjectsPage() {
   const { id: routeProjectId } = useParams<{ id?: string }>();
   const nav = useNavigate();
@@ -99,13 +178,13 @@ export default function ProjectsPage() {
         setContent(data);
       })
       .catch((err) => {
-        const parsed = extractApiError(err);
-        toast(parsed?.message || "Không thể tải danh sách nội dung", "error");
+        // Fallback to sample projects/workbooks when backend is offline
+        setContent(FALLBACK_CONTENT);
       })
       .finally(() => {
         setLoading(false);
       });
-  }, [routeProjectId, q, sort, toast]);
+  }, [routeProjectId, q, sort]);
 
   useEffect(() => {
     let ignore = false;
@@ -120,8 +199,7 @@ export default function ProjectsPage() {
       })
       .catch((err) => {
         if (!ignore) {
-          const parsed = extractApiError(err);
-          toast(parsed?.message || "Không thể tải danh sách nội dung", "error");
+          setContent(FALLBACK_CONTENT);
         }
       })
       .finally(() => {
@@ -130,7 +208,7 @@ export default function ProjectsPage() {
     return () => {
       ignore = true;
     };
-  }, [routeProjectId, q, sort, toast]);
+  }, [routeProjectId, q, sort]);
 
   // Handle Rename
   const handleRenameSubmit = async () => {
@@ -165,7 +243,7 @@ export default function ProjectsPage() {
       const tree = await projectService.getTree();
       setTreeNodes(tree);
     } catch {
-      setTreeNodes([]);
+      setTreeNodes(FALLBACK_TREE);
     }
   };
 

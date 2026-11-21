@@ -7,5 +7,7 @@
   },
   "terminal.integrated.defaultProfile.windows": "PowerShell (DAVS)",
   "npm.enableRunFromFolder": true,
-  "npm.packageManager": "npm"
+  "npm.packageManager": "npm",
+  "java.debug.settings.onBuildFailureProceed": true,
+  "java.compile.nullAnalysis.mode": "automatic"
 }
