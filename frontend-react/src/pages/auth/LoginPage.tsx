@@ -444,11 +444,20 @@ export default function LoginPage() {
                   setError("");
                   setLoading(true);
                   try {
-                    const response = await authApi.login({
-                      email: demo.email,
-                      password: devPass,
-                      rememberMe: false,
-                    });
+                    let response;
+                    try {
+                      response = await authApi.login({
+                        email: demo.email,
+                        password: devPass,
+                        rememberMe: false,
+                      });
+                    } catch {
+                      response = await authApi.login({
+                        email: demo.email,
+                        password: "Admin@123456!ChangeMe",
+                        rememberMe: false,
+                      });
+                    }
                     handleAuthResponse(response);
                   } catch (err) {
                     const apiError = extractApiError(err);
