@@ -361,7 +361,7 @@ export default function ProjectsPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${wb.name}.twb`;
+      a.download = /\.[a-z0-9]+$/i.test(wb.name) ? wb.name : `${wb.name}.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();

@@ -154,7 +154,7 @@ class CustomViewAndSaveAsTests {
 
         WorkbookDao.WorkbookRow source = new WorkbookDao.WorkbookRow(
                 sourceWbId, UUID.randomUUID(), "Project", "Source", "Desc", 1, author.getId(), "Author",
-                "IMPORTED", false, 1024L, "source.twbx", Instant.now(), Instant.now()
+                "IMPORTED", false, 1024L, "source.xlsx", Instant.now(), Instant.now()
         );
         when(workbookRepository.findById(sourceWbId)).thenReturn(Optional.of(source));
         when(workbookRepository.findActiveByProjectAndName(targetProjId, "Workbook Copy")).thenReturn(Optional.empty());
@@ -165,13 +165,13 @@ class CustomViewAndSaveAsTests {
 
         WorkbookDao.WorkbookRow copyRow = new WorkbookDao.WorkbookRow(
                 copyWbId, targetProjId, "Project", "Workbook Copy", "Mô tả copy", 1, author.getId(), "Author",
-                "IMPORTED", false, 1024L, "copy.twbx", Instant.now(), Instant.now()
+                "IMPORTED", false, 1024L, "copy.xlsx", Instant.now(), Instant.now()
         );
         when(workbookRepository.findById(copyWbId)).thenReturn(Optional.of(copyRow));
 
         WorkbookDto copyDto = new WorkbookDto(
                 copyWbId, targetProjId, "Project", "Workbook Copy", "Mô tả copy", 1, author.getId(),
-                "Author", "IMPORTED", false, 1024L, "copy.twbx", List.of(), Instant.now(), Instant.now()
+                "Author", "IMPORTED", false, 1024L, "copy.xlsx", List.of(), Instant.now(), Instant.now()
         );
         when(workbookRepository.toDto(copyRow)).thenReturn(copyDto);
 

@@ -13,7 +13,7 @@ export interface ParsedExcelWorkbook {
 }
 
 const EXCEL_EXTENSIONS = new Set(["xlsx", "xls", "csv"]);
-const SUPPORTED_UPLOAD_EXTENSIONS = new Set(["twb", "twbx", "xlsx", "xls", "csv"]);
+const SUPPORTED_UPLOAD_EXTENSIONS = new Set(["xlsx", "xls", "csv"]);
 
 export function getFileExtension(fileName: string): string {
   const trimmed = fileName.trim().toLowerCase();

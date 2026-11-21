@@ -308,7 +308,7 @@ export default function WorkbookUploadPage() {
     }
 
     if (!isSupportedWorkbookUploadFile(selected.name)) {
-      const msg = "Chỉ hỗ trợ tệp .twb, .twbx hoặc Excel (.xlsx, .xls, .csv).";
+      const msg = "Chỉ hỗ trợ tệp Excel (.xlsx, .xls) hoặc CSV (.csv).";
       setFile(null);
       setParsedExcel(null);
       setErrorMessage(msg);
@@ -329,7 +329,7 @@ export default function WorkbookUploadPage() {
 
   const executeUpload = async (forceOverwrite = false) => {
     if (!file) {
-      toast("Vui lòng chọn tệp .twb, .twbx hoặc Excel (.xlsx, .xls, .csv)", "error");
+      toast("Vui lòng chọn tệp Excel (.xlsx, .xls) hoặc CSV (.csv)", "error");
       return;
     }
     if (!targetProjectId) {
@@ -514,7 +514,7 @@ export default function WorkbookUploadPage() {
             <div className="font-medium text-ink">
               {file
                 ? file.name
-                : "Kéo thả hoặc nhấn để chọn tệp .twb, .twbx hoặc Excel (.xlsx, .xls, .csv)"}
+                : "Kéo thả hoặc nhấn để chọn tệp Excel (.xlsx, .xls) hoặc CSV (.csv)"}
             </div>
             {file && (
               <div className="mt-1 flex items-center justify-center gap-2 text-xs text-muted-foreground">
@@ -526,13 +526,13 @@ export default function WorkbookUploadPage() {
             )}
             {!file && (
               <div className="mt-1 text-xs text-muted-foreground">
-                Hỗ trợ Tableau Workbook (.twb, .twbx) và tệp dữ liệu Excel (.xlsx, .xls, .csv). Tối đa 1 GB.
+                Hỗ trợ tệp dữ liệu Excel (.xlsx, .xls) và CSV (.csv). Tối đa 1 GB.
               </div>
             )}
           </div>
           <input
             type="file"
-            accept=".twb,.twbx,.xlsx,.xls,.csv"
+            accept=".xlsx,.xls,.csv"
             className="hidden"
             disabled={uploading}
             onChange={(e) => handleFileChange(e.target.files?.[0] || null)}

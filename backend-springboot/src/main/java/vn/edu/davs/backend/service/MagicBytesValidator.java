@@ -14,8 +14,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class MagicBytesValidator {
 
-    private static final Set<String> TEXT_EXTENSIONS = Set.of("csv", "tsv", "txt", "json", "xml", "twb");
-    private static final Set<String> ZIP_BASED_EXTENSIONS = Set.of("zip", "xlsx", "twbx", "davs");
+    private static final Set<String> TEXT_EXTENSIONS = Set.of("csv", "tsv", "txt", "json", "xml");
+    private static final Set<String> ZIP_BASED_EXTENSIONS = Set.of("zip", "xlsx", "davs");
 
     private static final byte[] PNG_MAGIC = {(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
     private static final byte[] JPEG_MAGIC = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF};
@@ -96,7 +96,7 @@ public class MagicBytesValidator {
         if ("json".equals(ext) && (text.isEmpty() || (text.charAt(0) != '{' && text.charAt(0) != '['))) {
             throw new DavsException(ErrorCode.ERR_PRJ_08);
         }
-        if (("xml".equals(ext) || "twb".equals(ext)) && (text.isEmpty() || text.charAt(0) != '<')) {
+        if ("xml".equals(ext) && (text.isEmpty() || text.charAt(0) != '<')) {
             throw new DavsException(ErrorCode.ERR_PRJ_08);
         }
     }

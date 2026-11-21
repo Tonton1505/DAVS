@@ -127,11 +127,11 @@ class WorkbookAndVersionTests {
                 .isEqualTo(ErrorCode.ERR_PRJ_04);
 
         // Missing PUBLISH permission -> ERR-PRJ-03
-        MockMultipartFile validTwb = new MockMultipartFile(
+        MockMultipartFile validExcel = new MockMultipartFile(
                 "file",
-                "sales.twb",
-                "application/xml",
-                "<?xml version='1.0'?><workbook/>".getBytes(StandardCharsets.UTF_8)
+                "sales.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                new byte[]{'P', 'K', 0x03, 0x04, 0x14, 0x00}
         );
         assertThatThrownBy(() -> workbookService.uploadWorkbook(
                 projectId,
@@ -139,7 +139,7 @@ class WorkbookAndVersionTests {
                 "Desc",
                 false,
                 null,
-                validTwb,
+                validExcel,
                 viewer
         ))
                 .isInstanceOf(DavsException.class)
@@ -160,7 +160,7 @@ class WorkbookAndVersionTests {
                 "IMPORTED",
                 false,
                 128L,
-                "sales.twb",
+                "sales.xlsx",
                 Instant.now(),
                 Instant.now()
         );
@@ -173,7 +173,7 @@ class WorkbookAndVersionTests {
                 "Desc",
                 false,
                 null,
-                validTwb,
+                validExcel,
                 creator
         ))
                 .isInstanceOf(DavsException.class)
@@ -189,7 +189,7 @@ class WorkbookAndVersionTests {
                 "Desc",
                 true,
                 "Overwrite",
-                validTwb,
+                validExcel,
                 creator
         ))
                 .isInstanceOf(DavsException.class)
@@ -279,11 +279,11 @@ class WorkbookAndVersionTests {
 
     @Test
     void uc08UploadOverwriteIncrementsVersionAndPrunesOldestExceedingMaxVersions() {
-        MockMultipartFile validTwb = new MockMultipartFile(
+        MockMultipartFile validExcel = new MockMultipartFile(
                 "file",
-                "sales_v2.twb",
-                "application/xml",
-                "<?xml version='1.0'?><workbook/>".getBytes(StandardCharsets.UTF_8)
+                "sales_v2.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                new byte[]{'P', 'K', 0x03, 0x04, 0x14, 0x00}
         );
         UUID wbId = UUID.randomUUID();
         WorkbookDao.WorkbookRow v25Row = new WorkbookDao.WorkbookRow(
@@ -298,7 +298,7 @@ class WorkbookAndVersionTests {
                 "IMPORTED",
                 false,
                 256L,
-                "sales_v2.twb",
+                "sales_v2.xlsx",
                 Instant.now(),
                 Instant.now()
         );
@@ -314,7 +314,7 @@ class WorkbookAndVersionTests {
                 "IMPORTED",
                 false,
                 256L,
-                "sales_v2.twb",
+                "sales_v2.xlsx",
                 Instant.now(),
                 Instant.now()
         );
@@ -324,10 +324,10 @@ class WorkbookAndVersionTests {
         when(storageService.put(eq(Bucket.WORKBOOKS), anyString(), anyString(), any(), any(), anyLong()))
                 .thenReturn(new StoredObject(
                         Bucket.WORKBOOKS,
-                        "projects/" + projectId + "/obj-26.twb",
-                        "sales_v2.twb",
+                        "projects/" + projectId + "/obj-26.xlsx",
+                        "sales_v2.xlsx",
                         256L,
-                        "application/xml"
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 ));
 
         UUID v1VersionId = UUID.randomUUID();
@@ -335,8 +335,8 @@ class WorkbookAndVersionTests {
                 v1VersionId,
                 wbId,
                 1,
-                "projects/" + projectId + "/obj-1.twb",
-                "sales_v1.twb",
+                "projects/" + projectId + "/obj-1.xlsx",
+                "sales_v1.xlsx",
                 100L,
                 "Initial",
                 creatorId,
@@ -365,7 +365,7 @@ class WorkbookAndVersionTests {
                 "IMPORTED",
                 false,
                 256L,
-                "sales_v2.twb",
+                "sales_v2.xlsx",
                 List.of(),
                 Instant.now(),
                 Instant.now()
@@ -377,7 +377,7 @@ class WorkbookAndVersionTests {
                 "Updated",
                 true,
                 "Version 26",
-                validTwb,
+                validExcel,
                 creator
         );
 
@@ -401,7 +401,7 @@ class WorkbookAndVersionTests {
                 "IMPORTED",
                 false,
                 512L,
-                "finance.twb",
+                "finance.xlsx",
                 Instant.now(),
                 Instant.now()
         );
@@ -412,8 +412,8 @@ class WorkbookAndVersionTests {
                 v1Id,
                 wbId,
                 1,
-                "projects/obj-v1.twb",
-                "finance_v1.twb",
+                "projects/obj-v1.xlsx",
+                "finance_v1.xlsx",
                 400L,
                 "Initial",
                 creatorId,
@@ -426,8 +426,8 @@ class WorkbookAndVersionTests {
                 UUID.randomUUID(),
                 wbId,
                 0,
-                "projects/obj-v0.twb",
-                "finance_v0.twb",
+                "projects/obj-v0.xlsx",
+                "finance_v0.xlsx",
                 300L,
                 "Purged",
                 creatorId,
@@ -466,8 +466,8 @@ class WorkbookAndVersionTests {
                 UUID.randomUUID(),
                 wbId,
                 3,
-                "projects/obj-v1.twb",
-                "finance_v1.twb",
+                "projects/obj-v1.xlsx",
+                "finance_v1.xlsx",
                 400L,
                 "Khôi phục từ v1",
                 creatorId,
@@ -489,10 +489,10 @@ class WorkbookAndVersionTests {
         verify(workbookRepository).updateCurrentVersion(wbId, 3, false);
 
         // [3a] Download version
-        when(storageService.get(Bucket.WORKBOOKS, "projects/obj-v1.twb"))
+        when(storageService.get(Bucket.WORKBOOKS, "projects/obj-v1.xlsx"))
                 .thenReturn(new ByteArrayInputStream("<workbook/>".getBytes(StandardCharsets.UTF_8)));
         WorkbookService.DownloadedVersion dl = workbookService.downloadVersion(wbId, 1, creator);
-        assertThat(dl.fileName()).isEqualTo("finance_v1.twb");
+        assertThat(dl.fileName()).isEqualTo("finance_v1.xlsx");
         assertThat(dl.content()).isNotEmpty();
 
         // [3b] Cannot delete current version (v2)

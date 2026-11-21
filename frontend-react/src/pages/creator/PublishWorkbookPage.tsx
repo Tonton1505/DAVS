@@ -276,7 +276,7 @@ export default function PublishWorkbookPage() {
                   onChange={(e) => setPackagedTwbx(e.target.checked)}
                   className="mr-2 accent-primary"
                 />
-                Đóng gói .twbx (bao gồm dữ liệu và định dạng)
+                Đóng gói kèm dữ liệu và định dạng (Packaged Workbook)
               </label>
             </div>
           </section>

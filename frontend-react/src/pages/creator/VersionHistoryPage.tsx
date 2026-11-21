@@ -105,7 +105,7 @@ export default function VersionHistoryPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = v.fileName || `workbook_v${v.versionNumber}.twb`;
+      a.download = v.fileName || `workbook_v${v.versionNumber}.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();

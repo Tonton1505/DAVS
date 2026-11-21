@@ -84,7 +84,7 @@ public enum ErrorCode {
     ERR_PRJ_04(
             "ERR-PRJ-04",
             HttpStatus.BAD_REQUEST,
-            "Chỉ hỗ trợ tệp .twb hoặc .twbx."),
+            "Chỉ hỗ trợ tệp .xlsx, .xls hoặc .csv."),
     ERR_PRJ_05(
             "ERR-PRJ-05",
             HttpStatus.PAYLOAD_TOO_LARGE,

@@ -34,7 +34,7 @@ class StorageValidationTests {
 
         assertThatCode(() -> validator.validate("sales.csv", csvBytes)).doesNotThrowAnyException();
         assertThatCode(() -> validator.validate("chart.png", pngHeader)).doesNotThrowAnyException();
-        assertThatCode(() -> validator.validate("book.twbx", zipHeader)).doesNotThrowAnyException();
+        assertThatCode(() -> validator.validate("book.xlsx", zipHeader)).doesNotThrowAnyException();
 
         // Spoofed EXE renamed to .csv
         assertThatThrownBy(() -> validator.validate("fake.csv", exeHeader))

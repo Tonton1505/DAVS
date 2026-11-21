@@ -56,7 +56,9 @@ describe("WorkbookUploadPage (UC08)", () => {
 
     await waitFor(() => expect(projectService.list).toHaveBeenCalled());
 
-    const file = new File(["<workbook/>"], "sales_q4.twb", { type: "application/xml" });
+    const file = new File(["dummy excel content"], "sales_q4.xlsx", {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
 
@@ -87,7 +89,7 @@ describe("WorkbookUploadPage (UC08)", () => {
         importStatus: "IMPORTED",
         needsReconnect: false,
         sizeBytes: 1024,
-        fileName: "sales_q4.twb",
+        fileName: "sales_q4.xlsx",
         labels: [],
         createdAt: "2026-01-01T00:00:00Z",
         updatedAt: "2026-01-01T00:00:00Z",
@@ -101,11 +103,13 @@ describe("WorkbookUploadPage (UC08)", () => {
 
     await waitFor(() => expect(projectService.list).toHaveBeenCalled());
 
-    const file = new File(["<workbook/>"], "sales_q4.twb", { type: "application/xml" });
+    const file = new File(["dummy excel content"], "sales_q4.xlsx", {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(fileInput, { target: { files: [file] } });
 
-    const uploadBtn = screen.getByRole("button", { name: /Tải lên workbook/i });
+    const uploadBtn = screen.getByRole("button", { name: /Tải lên/i });
     fireEvent.click(uploadBtn);
 
     // Overwrite dialog appears

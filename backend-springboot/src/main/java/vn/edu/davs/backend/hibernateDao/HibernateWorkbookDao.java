@@ -47,7 +47,7 @@ public class HibernateWorkbookDao implements WorkbookDao {
                        COALESCE(NULLIF(u.full_name, ''), u.email, 'Hệ thống') AS owner_name,
                        w.import_status, w.needs_reconnect, w.created_at, w.updated_at,
                        COALESCE(v.size_bytes, 0) AS size_bytes,
-                       COALESCE(v.file_name, w.name || '.twb') AS file_name
+                       COALESCE(v.file_name, w.name || '.xlsx') AS file_name
                 FROM workbooks w
                 INNER JOIN projects p ON p.id = w.project_id
                 LEFT JOIN users u ON u.id = w.owner_id
@@ -76,7 +76,7 @@ public class HibernateWorkbookDao implements WorkbookDao {
                        COALESCE(NULLIF(u.full_name, ''), u.email, 'Hệ thống') AS owner_name,
                        w.import_status, w.needs_reconnect, w.created_at, w.updated_at,
                        COALESCE(v.size_bytes, 0) AS size_bytes,
-                       COALESCE(v.file_name, w.name || '.twb') AS file_name
+                       COALESCE(v.file_name, w.name || '.xlsx') AS file_name
                 FROM workbooks w
                 INNER JOIN projects p ON p.id = w.project_id
                 LEFT JOIN users u ON u.id = w.owner_id
@@ -101,7 +101,7 @@ public class HibernateWorkbookDao implements WorkbookDao {
                        COALESCE(NULLIF(u.full_name, ''), u.email, 'Hệ thống') AS owner_name,
                        w.import_status, w.needs_reconnect, w.created_at, w.updated_at,
                        COALESCE(v.size_bytes, 0) AS size_bytes,
-                       COALESCE(v.file_name, w.name || '.twb') AS file_name
+                       COALESCE(v.file_name, w.name || '.xlsx') AS file_name
                 FROM workbooks w
                 INNER JOIN projects p ON p.id = w.project_id
                 LEFT JOIN users u ON u.id = w.owner_id
@@ -131,7 +131,7 @@ public class HibernateWorkbookDao implements WorkbookDao {
                        COALESCE(NULLIF(u.full_name, ''), u.email, 'Hệ thống') AS owner_name,
                        w.import_status, w.needs_reconnect, w.created_at, w.updated_at,
                        COALESCE(v.size_bytes, 0) AS size_bytes,
-                       COALESCE(v.file_name, w.name || '.twb') AS file_name
+                       COALESCE(v.file_name, w.name || '.xlsx') AS file_name
                 FROM workbooks w
                 INNER JOIN projects p ON p.id = w.project_id
                 LEFT JOIN users u ON u.id = w.owner_id

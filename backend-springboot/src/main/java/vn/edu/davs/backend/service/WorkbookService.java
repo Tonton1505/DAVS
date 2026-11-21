@@ -74,9 +74,7 @@ public class WorkbookService {
         }
         String originalFilename = file.getOriginalFilename() != null ? file.getOriginalFilename().trim() : "";
         String lowerFilename = originalFilename.toLowerCase(Locale.ROOT);
-        if (!lowerFilename.endsWith(".twb")
-                && !lowerFilename.endsWith(".twbx")
-                && !lowerFilename.endsWith(".xlsx")
+        if (!lowerFilename.endsWith(".xlsx")
                 && !lowerFilename.endsWith(".xls")
                 && !lowerFilename.endsWith(".csv")) {
             throw new DavsException(ErrorCode.ERR_PRJ_04);
