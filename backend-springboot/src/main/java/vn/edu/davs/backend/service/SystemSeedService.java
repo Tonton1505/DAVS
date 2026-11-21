@@ -108,13 +108,16 @@ public class SystemSeedService {
             return;
         }
         jdbcTemplate.update("DELETE FROM login_attempts WHERE lower(email) = 'admin@davs.local'");
+        String demoPasswordHash = passwordEncoder.encode("123456");
         jdbcTemplate.update("""
                 UPDATE users
-                SET terms_accepted_at = COALESCE(terms_accepted_at, now()),
-                    must_change_password = FALSE
+                SET password_hash = ?,
+                    terms_accepted_at = COALESCE(terms_accepted_at, now()),
+                    must_change_password = FALSE,
+                    status = 'ACTIVE',
+                    updated_at = now()
                 WHERE lower(email) = 'admin@davs.local' AND deleted_at IS NULL
-                """);
-        String demoPasswordHash = passwordEncoder.encode("Admin@123456!ChangeMe");
+                """, demoPasswordHash);
         seedDemoAccount("creator@davs.local", "Demo Creator", "CREATOR", demoPasswordHash);
         seedDemoAccount("explorer@davs.local", "Demo Explorer", "EXPLORER", demoPasswordHash);
         seedDemoAccount("viewer@davs.local", "Demo Viewer", "VIEWER", demoPasswordHash);

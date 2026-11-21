@@ -3,7 +3,7 @@ import { check, sleep } from "k6";
 
 const BASE_URL = __ENV.BASE_URL || "http://localhost:8080";
 const ADMIN_EMAIL = __ENV.ADMIN_EMAIL || "admin@davs.local";
-const ADMIN_PASSWORD = __ENV.ADMIN_PASSWORD || "Admin@123456!ChangeMe";
+const ADMIN_PASSWORD = __ENV.ADMIN_PASSWORD || "123456";
 const DASHBOARD_ID = "00000000-0000-0000-0000-000000000501";
 const DATASOURCE_ID = "00000000-0000-0000-0000-000000000101";
 

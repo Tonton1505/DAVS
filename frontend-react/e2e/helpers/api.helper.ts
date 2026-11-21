@@ -2,7 +2,7 @@ import type { APIRequestContext } from "@playwright/test";
 
 export const DEFAULT_SEED_ADMIN = {
   email: process.env.ADMIN_EMAIL || "admin@davs.local",
-  password: process.env.ADMIN_INITIAL_PASSWORD || "Admin@123456!ChangeMe",
+  password: process.env.ADMIN_INITIAL_PASSWORD || "123456",
 };
 
 export class ApiHelper {
