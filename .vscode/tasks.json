@@ -1,0 +1,53 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Chạy Frontend (Vite - Cổng 5173)",
+      "type": "shell",
+      "command": "npm.cmd",
+      "args": ["run", "dev"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend-react"
+      },
+      "isBackground": true,
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Chạy Backend (Spring Boot - Cổng 8080)",
+      "type": "shell",
+      "command": "mvn",
+      "args": ["spring-boot:run"],
+      "options": {
+        "cwd": "${workspaceFolder}/backend-springboot"
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Kiểm thử Frontend (Vitest)",
+      "type": "shell",
+      "command": "npm.cmd",
+      "args": ["test", "--", "--run"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend-react"
+      },
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Kiểm thử Backend (Maven Unit Tests)",
+      "type": "shell",
+      "command": "mvn",
+      "args": ["test", "-Dtest=!*IntegrationTest*,!DavsApplicationTests"],
+      "options": {
+        "cwd": "${workspaceFolder}/backend-springboot"
+      },
+      "group": "test",
+      "problemMatcher": []
+    }
+  ]
+}

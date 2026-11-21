@@ -64,6 +64,8 @@ infra/miniodata/
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
 .project
 .classpath
 .settings/

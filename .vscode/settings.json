@@ -1,0 +1,11 @@
+{
+  "terminal.integrated.profiles.windows": {
+    "PowerShell (DAVS)": {
+      "source": "PowerShell",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass"]
+    }
+  },
+  "terminal.integrated.defaultProfile.windows": "PowerShell (DAVS)",
+  "npm.enableRunFromFolder": true,
+  "npm.packageManager": "npm"
+}

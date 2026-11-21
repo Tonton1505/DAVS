@@ -1,0 +1,36 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Chạy DAVS Frontend (F5 - Tự mở trình duyệt)",
+      "program": "${workspaceFolder}/frontend-react/node_modules/vite/bin/vite.js",
+      "args": ["--open"],
+      "cwd": "${workspaceFolder}/frontend-react",
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "type": "java",
+      "name": "Spring Boot - BackendSpringbootApplication",
+      "request": "launch",
+      "mainClass": "vn.edu.davs.backend.BackendSpringbootApplication",
+      "projectName": "backend-springboot",
+      "cwd": "${workspaceFolder}/backend-springboot"
+    },
+    {
+      "type": "jdk",
+      "name": "Oracle Java - BackendSpringbootApplication",
+      "request": "launch",
+      "mainClass": "vn.edu.davs.backend.BackendSpringbootApplication"
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Launch Frontend (Chrome)",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/frontend-react"
+    }
+  ]
+}
