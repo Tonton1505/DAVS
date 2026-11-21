@@ -108,7 +108,7 @@ public class SystemSeedService {
             return;
         }
         jdbcTemplate.update("DELETE FROM login_attempts WHERE lower(email) = 'admin@davs.local'");
-        String demoPasswordHash = passwordEncoder.encode("123456");
+        String demoPasswordHash = passwordEncoder.encode("12345678");
         jdbcTemplate.update("""
                 UPDATE users
                 SET password_hash = ?,

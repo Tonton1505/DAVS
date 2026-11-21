@@ -128,7 +128,7 @@ davs:
       allowed-time-step-drift: ${MFA_TIME_STEP_DRIFT:1}
   seed:
     admin-email: ${ADMIN_EMAIL:admin@davs.local}
-    admin-initial-password: ${ADMIN_INITIAL_PASSWORD:123456}
+    admin-initial-password: ${ADMIN_INITIAL_PASSWORD:12345678}
   mail:
     from: ${SMTP_FROM:noreply@davs.local}
   jobs:

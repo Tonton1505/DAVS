@@ -438,7 +438,7 @@ export default function LoginPage() {
                 className="rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-muted disabled:opacity-50"
                 onClick={async () => {
                   const devPass =
-                    import.meta.env.VITE_DEMO_ADMIN_PASSWORD || "123456";
+                    import.meta.env.VITE_DEMO_ADMIN_PASSWORD || "12345678";
                   setEmail(demo.email);
                   setPassword(devPass);
                   setError("");
