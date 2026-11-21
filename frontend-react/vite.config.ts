@@ -23,12 +23,14 @@ export default defineConfig(({ mode }) => {
       port: parseInt(process.env.PORT || "5173"),
       proxy: {
         "/api": {
-          target: "http://localhost:8080",
+          target: process.env.VITE_BACKEND_URL || "https://davs-backend.onrender.com",
           changeOrigin: true,
+          secure: false,
         },
         "/actuator": {
-          target: "http://localhost:8080",
+          target: process.env.VITE_BACKEND_URL || "https://davs-backend.onrender.com",
           changeOrigin: true,
+          secure: false,
         },
       },
     },
