@@ -1,4 +1,4 @@
-package vn.edu.davs.backend.controller;
+package vn.edu.davs.backend.rest;
 
 import vn.edu.davs.backend.dto.CreateLabelCategoryRequest;
 import vn.edu.davs.backend.dto.CreateLabelRequest;

@@ -2,10 +2,10 @@ package vn.edu.davs.backend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import vn.edu.davs.backend.exception.DavsException;
-import vn.edu.davs.backend.dao.JdbcCustomViewRepository;
-import vn.edu.davs.backend.dao.JdbcDashboardRepository;
-import vn.edu.davs.backend.dao.JdbcProjectRepository;
-import vn.edu.davs.backend.dao.JdbcWorkbookRepository;
+import vn.edu.davs.backend.dao.CustomViewDao;
+import vn.edu.davs.backend.dao.DashboardDao;
+import vn.edu.davs.backend.dao.WorkbookDao;
+import vn.edu.davs.backend.dao.ProjectDao;
 import vn.edu.davs.backend.dto.AuditEvent;
 import vn.edu.davs.backend.dto.CreateCustomViewRequest;
 import vn.edu.davs.backend.dto.CustomViewDto;
@@ -28,10 +28,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CustomViewService {
 
-    private final JdbcCustomViewRepository customViewRepository;
-    private final JdbcDashboardRepository dashboardRepository;
-    private final JdbcWorkbookRepository workbookRepository;
-    private final JdbcProjectRepository projectRepository;
+    private final CustomViewDao customViewRepository;
+    private final DashboardDao dashboardRepository;
+    private final WorkbookDao workbookRepository;
+    private final ProjectDao projectRepository;
     private final PermissionService permissionService;
     private final AuditService auditService;
     private final ObjectMapper objectMapper;
@@ -113,7 +113,7 @@ public class CustomViewService {
             throw new DavsException(ErrorCode.ERR_PRJ_03, "Bạn không có quyền Xuất bản (PUBLISH) tại dự án đích");
         }
 
-        JdbcWorkbookRepository.WorkbookRow source = workbookRepository.findById(request.sourceWorkbookId())
+        WorkbookDao.WorkbookRow source = workbookRepository.findById(request.sourceWorkbookId())
                 .orElseThrow(() -> new DavsException(ErrorCode.ERR_PRJ_03, "Không tìm thấy workbook nguồn"));
 
         if (workbookRepository.findActiveByProjectAndName(request.targetProjectId(), request.newName()).isPresent()) {
@@ -128,7 +128,7 @@ public class CustomViewService {
                 "{}",
                 false
         );
-        JdbcWorkbookRepository.WorkbookRow savedRow = workbookRepository.findById(copyId)
+        WorkbookDao.WorkbookRow savedRow = workbookRepository.findById(copyId)
                 .orElseThrow(() -> new IllegalStateException("Workbook not found after copy: " + copyId));
         WorkbookDto copy = workbookRepository.toDto(savedRow);
 

@@ -1,6 +1,6 @@
 package vn.edu.davs.backend.project;
 
-import vn.edu.davs.backend.dao.JdbcLabelRepository;
+import vn.edu.davs.backend.dao.LabelDao;
 import vn.edu.davs.backend.dto.CreateLabelRequest;
 import vn.edu.davs.backend.dto.LabelCategoryDto;
 import vn.edu.davs.backend.dto.LabelDto;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
  */
 class LabelManagementTests {
 
-    private JdbcLabelRepository labelRepository;
+    private LabelDao labelRepository;
     private AuditService auditService;
     private LabelService labelService;
 
@@ -43,7 +43,7 @@ class LabelManagementTests {
 
     @BeforeEach
     void setUp() {
-        labelRepository = mock(JdbcLabelRepository.class);
+        labelRepository = mock(LabelDao.class);
         auditService = mock(AuditService.class);
         labelService = new LabelService(labelRepository, auditService);
 

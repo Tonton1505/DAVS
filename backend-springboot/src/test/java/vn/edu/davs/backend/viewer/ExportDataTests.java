@@ -1,7 +1,7 @@
 package vn.edu.davs.backend.viewer;
 
 import vn.edu.davs.backend.exception.DavsException;
-import vn.edu.davs.backend.dao.JdbcDashboardRepository;
+import vn.edu.davs.backend.dao.DashboardDao;
 import vn.edu.davs.backend.dto.DashboardDto;
 import vn.edu.davs.backend.dto.ExportLimitsDto;
 import vn.edu.davs.backend.dto.ExportRequest;
@@ -34,7 +34,7 @@ import static org.mockito.Mockito.when;
 class ExportDataTests {
 
     @Mock
-    private JdbcDashboardRepository dashboardRepository;
+    private DashboardDao dashboardRepository;
     @Mock
     private PermissionService permissionService;
     @Mock

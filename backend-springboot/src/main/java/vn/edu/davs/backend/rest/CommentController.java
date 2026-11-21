@@ -1,4 +1,4 @@
-package vn.edu.davs.backend.controller;
+package vn.edu.davs.backend.rest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

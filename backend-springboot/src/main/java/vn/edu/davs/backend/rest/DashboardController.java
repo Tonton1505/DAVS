@@ -1,4 +1,4 @@
-package vn.edu.davs.backend.controller;
+package vn.edu.davs.backend.rest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Controller for Dashboards, Interactive Actions (UC17 & UC18), Viewing & Query (UC19).
+ * Controller for Dashboards, Interactive Actions (UC17 &amp; UC18), Viewing &amp; Query (UC19).
  */
 @Tag(name = "Dashboards", description = "Dashboard authoring, viewing, interaction and actions")
 @RestController

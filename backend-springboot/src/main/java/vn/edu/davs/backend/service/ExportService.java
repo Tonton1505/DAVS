@@ -1,7 +1,7 @@
 package vn.edu.davs.backend.service;
 
 import vn.edu.davs.backend.exception.DavsException;
-import vn.edu.davs.backend.dao.JdbcDashboardRepository;
+import vn.edu.davs.backend.dao.DashboardDao;
 import vn.edu.davs.backend.dto.AuditEvent;
 import vn.edu.davs.backend.dto.DashboardDto;
 import vn.edu.davs.backend.dto.ExportLimitsDto;
@@ -32,13 +32,13 @@ public class ExportService {
     private static final UUID DEFAULT_SAMPLE_DATASOURCE_ID =
             UUID.fromString("00000000-0000-0000-0000-000000000101");
 
-    private final JdbcDashboardRepository dashboardRepository;
+    private final DashboardDao dashboardRepository;
     private final PermissionService permissionService;
     private final AuditService auditService;
     private final RowFilterProvider rowFilterProvider;
 
     public ExportService(
-            JdbcDashboardRepository dashboardRepository,
+            DashboardDao dashboardRepository,
             PermissionService permissionService,
             AuditService auditService
     ) {
@@ -47,7 +47,7 @@ public class ExportService {
 
     @Autowired
     public ExportService(
-            JdbcDashboardRepository dashboardRepository,
+            DashboardDao dashboardRepository,
             PermissionService permissionService,
             AuditService auditService,
             RowFilterProvider rowFilterProvider

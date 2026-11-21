@@ -1,6 +1,6 @@
 package vn.edu.davs.backend.service;
 
-import vn.edu.davs.backend.dao.JdbcLabelRepository;
+import vn.edu.davs.backend.dao.LabelDao;
 import vn.edu.davs.backend.dto.AuditEvent;
 import vn.edu.davs.backend.dto.CreateLabelCategoryRequest;
 import vn.edu.davs.backend.dto.CreateLabelRequest;
@@ -32,7 +32,7 @@ public class LabelService {
     private static final int MAX_LABEL_DESC_LENGTH = 250;
     private static final int MAX_CATEGORY_NAME_LENGTH = 100;
 
-    private final JdbcLabelRepository labelRepository;
+    private final LabelDao labelRepository;
     private final AuditService auditService;
 
     @Transactional(readOnly = true)

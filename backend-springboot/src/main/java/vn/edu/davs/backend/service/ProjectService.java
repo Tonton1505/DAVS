@@ -1,7 +1,7 @@
 package vn.edu.davs.backend.service;
 
-import vn.edu.davs.backend.dao.JdbcProjectRepository;
-import vn.edu.davs.backend.dao.JdbcWorkbookRepository;
+import vn.edu.davs.backend.dao.WorkbookDao;
+import vn.edu.davs.backend.dao.ProjectDao;
 import vn.edu.davs.backend.dto.AddCollectionItemRequest;
 import vn.edu.davs.backend.dto.AuditEvent;
 import vn.edu.davs.backend.dto.ChangeProjectOwnerRequest;
@@ -51,14 +51,14 @@ public class ProjectService {
     private static final int MAX_SEARCH_QUERY_LENGTH = 100;
     private static final Pattern FORBIDDEN_NAME_CHARS = Pattern.compile("[\\\\/:*?\"<>|]");
 
-    private final JdbcProjectRepository projectRepository;
+    private final ProjectDao projectRepository;
     private final SettingsService settingsService;
     private final AuditService auditService;
     private final PermissionService permissionService;
-    private final JdbcWorkbookRepository workbookRepository;
+    private final WorkbookDao workbookRepository;
 
     public ProjectService(
-            JdbcProjectRepository projectRepository,
+            ProjectDao projectRepository,
             SettingsService settingsService,
             AuditService auditService
     ) {
@@ -67,11 +67,11 @@ public class ProjectService {
 
     @Autowired
     public ProjectService(
-            JdbcProjectRepository projectRepository,
+            ProjectDao projectRepository,
             SettingsService settingsService,
             AuditService auditService,
             PermissionService permissionService,
-            JdbcWorkbookRepository workbookRepository
+            WorkbookDao workbookRepository
     ) {
         this.projectRepository = projectRepository;
         this.settingsService = settingsService;
@@ -166,10 +166,10 @@ public class ProjectService {
         }
 
         if (workbookRepository != null) {
-            List<JdbcWorkbookRepository.WorkbookRow> workbookRows = projectId != null && trimmedQuery.isEmpty()
+            List<WorkbookDao.WorkbookRow> workbookRows = projectId != null && trimmedQuery.isEmpty()
                     ? workbookRepository.listByProject(projectId)
                     : workbookRepository.listAllActive();
-            for (JdbcWorkbookRepository.WorkbookRow wb : workbookRows) {
+            for (WorkbookDao.WorkbookRow wb : workbookRows) {
                 if (projectId != null && !projectId.equals(wb.projectId())) {
                     continue;
                 }
@@ -377,7 +377,7 @@ public class ProjectService {
             throw new DavsException(ErrorCode.ERR_USR_06);
         }
 
-        JdbcProjectRepository.OwnerCandidateRow candidate = projectRepository.findUserForOwnership(request.userId())
+        ProjectDao.OwnerCandidateRow candidate = projectRepository.findUserForOwnership(request.userId())
                 .orElseThrow(() -> new DavsException(ErrorCode.ERR_USR_06));
         if (!"ACTIVE".equalsIgnoreCase(candidate.status())
                 || !candidate.siteRole().isAtLeast(SiteRole.CREATOR)) {
@@ -432,7 +432,7 @@ public class ProjectService {
         if (actor == null) {
             throw new DavsException(ErrorCode.ERR_PRJ_03);
         }
-        JdbcProjectRepository.DeletedProjectRow deletedRow = projectRepository.findDeletedById(id)
+        ProjectDao.DeletedProjectRow deletedRow = projectRepository.findDeletedById(id)
                 .orElseThrow(() -> new DavsException(ErrorCode.ERR_PRJ_02));
         ProjectDto project = deletedRow.project();
         if (actor.getSiteRole() != SiteRole.SITE_ADMIN
@@ -525,7 +525,7 @@ public class ProjectService {
                 || permissionService.can(actor, Capability.VIEW, ResourceRef.project(project.id()));
     }
 
-    private boolean canViewWorkbook(DavsUser actor, JdbcWorkbookRepository.WorkbookRow wb) {
+    private boolean canViewWorkbook(DavsUser actor, WorkbookDao.WorkbookRow wb) {
         if (actor == null || wb == null) {
             return false;
         }
@@ -612,7 +612,7 @@ public class ProjectService {
         return actions;
     }
 
-    private List<String> computeWorkbookAllowedActions(DavsUser actor, JdbcWorkbookRepository.WorkbookRow wb) {
+    private List<String> computeWorkbookAllowedActions(DavsUser actor, WorkbookDao.WorkbookRow wb) {
         List<String> actions = new ArrayList<>();
         actions.add("VIEW");
         actions.add("ADD_TO_COLLECTION");

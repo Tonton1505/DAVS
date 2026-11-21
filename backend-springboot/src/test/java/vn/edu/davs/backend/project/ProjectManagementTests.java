@@ -1,7 +1,7 @@
 package vn.edu.davs.backend.project;
 
-import vn.edu.davs.backend.dao.JdbcProjectRepository;
-import vn.edu.davs.backend.dao.JdbcWorkbookRepository;
+import vn.edu.davs.backend.dao.WorkbookDao;
+import vn.edu.davs.backend.dao.ProjectDao;
 import vn.edu.davs.backend.dto.AddCollectionItemRequest;
 import vn.edu.davs.backend.dto.ChangeProjectOwnerRequest;
 import vn.edu.davs.backend.dto.CollectionDto;
@@ -40,11 +40,11 @@ import static org.mockito.Mockito.when;
  */
 class ProjectManagementTests {
 
-    private JdbcProjectRepository projectRepository;
+    private ProjectDao projectRepository;
     private SettingsService settingsService;
     private AuditService auditService;
     private PermissionService permissionService;
-    private JdbcWorkbookRepository workbookRepository;
+    private WorkbookDao workbookRepository;
     private ProjectService projectService;
 
     private UUID creatorId;
@@ -53,11 +53,11 @@ class ProjectManagementTests {
 
     @BeforeEach
     void setUp() {
-        projectRepository = mock(JdbcProjectRepository.class);
+        projectRepository = mock(ProjectDao.class);
         settingsService = mock(SettingsService.class);
         auditService = mock(AuditService.class);
         permissionService = mock(PermissionService.class);
-        workbookRepository = mock(JdbcWorkbookRepository.class);
+        workbookRepository = mock(WorkbookDao.class);
 
         when(settingsService.getInt(SettingKey.PROJECT_MAX_DEPTH)).thenReturn(5);
         when(settingsService.getInt(SettingKey.TRASH_RETENTION_DAYS)).thenReturn(30);
@@ -240,7 +240,7 @@ class ProjectManagementTests {
 
         // [6b] Viewer role cannot own project -> ERR-USR-06
         when(projectRepository.findUserForOwnership(viewerCandidateId)).thenReturn(Optional.of(
-                new JdbcProjectRepository.OwnerCandidateRow(
+                new ProjectDao.OwnerCandidateRow(
                         viewerCandidateId,
                         "viewer@davs.local",
                         "Viewer",
@@ -259,7 +259,7 @@ class ProjectManagementTests {
 
         // [6b] Valid transfer to active Creator
         when(projectRepository.findUserForOwnership(newCreatorId)).thenReturn(Optional.of(
-                new JdbcProjectRepository.OwnerCandidateRow(
+                new ProjectDao.OwnerCandidateRow(
                         newCreatorId,
                         "newcreator@davs.local",
                         "New Creator",
@@ -329,7 +329,7 @@ class ProjectManagementTests {
         verify(projectRepository).softDeleteProject(normalId);
 
         when(projectRepository.findDeletedById(normalId)).thenReturn(Optional.of(
-                new JdbcProjectRepository.DeletedProjectRow(normalProject, Instant.now())
+                new ProjectDao.DeletedProjectRow(normalProject, Instant.now())
         ));
         ProjectDto restored = projectService.restoreProject(normalId, creator);
         assertThat(restored.name()).isEqualTo("Q4 Reports");

@@ -2,7 +2,7 @@ package vn.edu.davs.backend.viewer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import vn.edu.davs.backend.exception.DavsException;
-import vn.edu.davs.backend.dao.JdbcCommentRepository;
+import vn.edu.davs.backend.dao.CommentDao;
 import vn.edu.davs.backend.dto.CommentDto;
 import vn.edu.davs.backend.dto.CreateCommentRequest;
 import vn.edu.davs.backend.dto.UpdateCommentRequest;
@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
 class CommentAndReplyTests {
 
     @Mock
-    private JdbcCommentRepository commentRepository;
+    private CommentDao commentRepository;
     @Mock
     private PermissionService permissionService;
     @Mock

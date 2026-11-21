@@ -1,7 +1,7 @@
 package vn.edu.davs.backend.project;
 
-import vn.edu.davs.backend.dao.JdbcProjectRepository;
-import vn.edu.davs.backend.dao.JdbcWorkbookRepository;
+import vn.edu.davs.backend.dao.WorkbookDao;
+import vn.edu.davs.backend.dao.ProjectDao;
 import vn.edu.davs.backend.dto.ProjectDto;
 import vn.edu.davs.backend.dto.RestoreWorkbookVersionRequest;
 import vn.edu.davs.backend.dto.WorkbookDto;
@@ -44,8 +44,8 @@ import static org.mockito.Mockito.when;
  */
 class WorkbookAndVersionTests {
 
-    private JdbcWorkbookRepository workbookRepository;
-    private JdbcProjectRepository projectRepository;
+    private WorkbookDao workbookRepository;
+    private ProjectDao projectRepository;
     private ProjectService projectService;
     private PermissionService permissionService;
     private StorageService storageService;
@@ -61,8 +61,8 @@ class WorkbookAndVersionTests {
 
     @BeforeEach
     void setUp() {
-        workbookRepository = mock(JdbcWorkbookRepository.class);
-        projectRepository = mock(JdbcProjectRepository.class);
+        workbookRepository = mock(WorkbookDao.class);
+        projectRepository = mock(ProjectDao.class);
         projectService = mock(ProjectService.class);
         permissionService = mock(PermissionService.class);
         storageService = mock(StorageService.class);
@@ -148,7 +148,7 @@ class WorkbookAndVersionTests {
 
         // [7a] Existing workbook without overwrite -> 409 ERR-PRJ-06
         UUID existingWbId = UUID.randomUUID();
-        JdbcWorkbookRepository.WorkbookRow existingRow = new JdbcWorkbookRepository.WorkbookRow(
+        WorkbookDao.WorkbookRow existingRow = new WorkbookDao.WorkbookRow(
                 existingWbId,
                 projectId,
                 "Default",
@@ -208,7 +208,7 @@ class WorkbookAndVersionTests {
                 xlsxBytes
         );
         UUID wbId = UUID.randomUUID();
-        JdbcWorkbookRepository.WorkbookRow savedRow = new JdbcWorkbookRepository.WorkbookRow(
+        WorkbookDao.WorkbookRow savedRow = new WorkbookDao.WorkbookRow(
                 wbId,
                 projectId,
                 "Default",
@@ -286,7 +286,7 @@ class WorkbookAndVersionTests {
                 "<?xml version='1.0'?><workbook/>".getBytes(StandardCharsets.UTF_8)
         );
         UUID wbId = UUID.randomUUID();
-        JdbcWorkbookRepository.WorkbookRow v25Row = new JdbcWorkbookRepository.WorkbookRow(
+        WorkbookDao.WorkbookRow v25Row = new WorkbookDao.WorkbookRow(
                 wbId,
                 projectId,
                 "Default",
@@ -302,7 +302,7 @@ class WorkbookAndVersionTests {
                 Instant.now(),
                 Instant.now()
         );
-        JdbcWorkbookRepository.WorkbookRow v26Row = new JdbcWorkbookRepository.WorkbookRow(
+        WorkbookDao.WorkbookRow v26Row = new WorkbookDao.WorkbookRow(
                 wbId,
                 projectId,
                 "Default",
@@ -331,7 +331,7 @@ class WorkbookAndVersionTests {
                 ));
 
         UUID v1VersionId = UUID.randomUUID();
-        JdbcWorkbookRepository.VersionRow oldestV1 = new JdbcWorkbookRepository.VersionRow(
+        WorkbookDao.VersionRow oldestV1 = new WorkbookDao.VersionRow(
                 v1VersionId,
                 wbId,
                 1,
@@ -389,7 +389,7 @@ class WorkbookAndVersionTests {
     @Test
     void uc10RestoreDownloadAndDeleteVersionFlow() {
         UUID wbId = UUID.randomUUID();
-        JdbcWorkbookRepository.WorkbookRow wbRow = new JdbcWorkbookRepository.WorkbookRow(
+        WorkbookDao.WorkbookRow wbRow = new WorkbookDao.WorkbookRow(
                 wbId,
                 projectId,
                 "Default",
@@ -408,7 +408,7 @@ class WorkbookAndVersionTests {
         when(workbookRepository.findById(wbId)).thenReturn(Optional.of(wbRow));
 
         UUID v1Id = UUID.randomUUID();
-        JdbcWorkbookRepository.VersionRow v1Row = new JdbcWorkbookRepository.VersionRow(
+        WorkbookDao.VersionRow v1Row = new WorkbookDao.VersionRow(
                 v1Id,
                 wbId,
                 1,
@@ -422,7 +422,7 @@ class WorkbookAndVersionTests {
                 false,
                 false
         );
-        JdbcWorkbookRepository.VersionRow purgedRow = new JdbcWorkbookRepository.VersionRow(
+        WorkbookDao.VersionRow purgedRow = new WorkbookDao.VersionRow(
                 UUID.randomUUID(),
                 wbId,
                 0,
@@ -462,7 +462,7 @@ class WorkbookAndVersionTests {
 
         // BUS-PRJ-17: Restoring v1 when current is v2 creates v3 without deleting v1 or v2
         when(workbookRepository.findVersion(wbId, 1, 2)).thenReturn(Optional.of(v1Row));
-        JdbcWorkbookRepository.VersionRow v3Row = new JdbcWorkbookRepository.VersionRow(
+        WorkbookDao.VersionRow v3Row = new WorkbookDao.VersionRow(
                 UUID.randomUUID(),
                 wbId,
                 3,

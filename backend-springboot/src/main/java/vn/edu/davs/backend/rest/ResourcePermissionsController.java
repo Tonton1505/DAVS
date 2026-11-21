@@ -1,4 +1,4 @@
-package vn.edu.davs.backend.controller;
+package vn.edu.davs.backend.rest;
 
 import vn.edu.davs.backend.dto.EffectivePermissionsResponse;
 import vn.edu.davs.backend.dto.PermissionSubjectDto;
@@ -6,9 +6,8 @@ import vn.edu.davs.backend.dto.PermissionTemplateDto;
 import vn.edu.davs.backend.dto.ResourcePermissionsResponse;
 import vn.edu.davs.backend.dto.UpdateResourcePermissionsRequest;
 import vn.edu.davs.backend.dto.UpdateResourcePermissionsResponse;
-import vn.edu.davs.backend.service.ResourcePermissionService;
-
 import vn.edu.davs.backend.model.DavsUser;
+import vn.edu.davs.backend.service.ResourcePermissionService;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;

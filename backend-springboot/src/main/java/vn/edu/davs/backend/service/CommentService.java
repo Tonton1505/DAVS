@@ -2,7 +2,7 @@ package vn.edu.davs.backend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import vn.edu.davs.backend.exception.DavsException;
-import vn.edu.davs.backend.dao.JdbcCommentRepository;
+import vn.edu.davs.backend.dao.CommentDao;
 import vn.edu.davs.backend.dto.AuditEvent;
 import vn.edu.davs.backend.dto.CommentDto;
 import vn.edu.davs.backend.dto.CreateCommentRequest;
@@ -28,7 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class CommentService {
 
-    private final JdbcCommentRepository commentRepository;
+    private final CommentDao commentRepository;
     private final PermissionService permissionService;
     private final AuditService auditService;
     private final ObjectMapper objectMapper;

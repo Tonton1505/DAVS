@@ -1,4 +1,4 @@
-package vn.edu.davs.backend.controller;
+package vn.edu.davs.backend.rest;
 
 import vn.edu.davs.backend.dto.RestoreWorkbookVersionRequest;
 import vn.edu.davs.backend.dto.WorkbookDto;

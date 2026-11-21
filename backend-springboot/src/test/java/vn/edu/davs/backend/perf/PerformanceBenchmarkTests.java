@@ -1,8 +1,8 @@
 package vn.edu.davs.backend.perf;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import vn.edu.davs.backend.dao.JdbcDashboardRepository;
-import vn.edu.davs.backend.dao.JdbcWorkbookRepository;
+import vn.edu.davs.backend.dao.DashboardDao;
+import vn.edu.davs.backend.dao.WorkbookDao;
 import vn.edu.davs.backend.dto.DashboardDto;
 import vn.edu.davs.backend.dto.ExportRequest;
 import vn.edu.davs.backend.dto.QueryRequest;
@@ -67,8 +67,8 @@ class PerformanceBenchmarkTests {
 
     @Test
     void dashboardInteractiveQueryAndCsvExportMeetLatencyTargets() {
-        JdbcDashboardRepository dashRepo = mock(JdbcDashboardRepository.class);
-        JdbcWorkbookRepository wbRepo = mock(JdbcWorkbookRepository.class);
+        DashboardDao dashRepo = mock(DashboardDao.class);
+        WorkbookDao wbRepo = mock(WorkbookDao.class);
         PermissionService perm = mock(PermissionService.class);
         AuditService audit = mock(AuditService.class);
 

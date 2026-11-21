@@ -1,7 +1,7 @@
 package vn.edu.davs.backend.service;
 
-import vn.edu.davs.backend.dao.JdbcProjectRepository;
-import vn.edu.davs.backend.dao.JdbcWorkbookRepository;
+import vn.edu.davs.backend.dao.WorkbookDao;
+import vn.edu.davs.backend.dao.ProjectDao;
 import vn.edu.davs.backend.dto.AuditEvent;
 import vn.edu.davs.backend.dto.ProjectDto;
 import vn.edu.davs.backend.dto.RestoreWorkbookVersionRequest;
@@ -42,8 +42,8 @@ public class WorkbookService {
     private static final int MAX_DESCRIPTION_LENGTH = 500;
     private static final int MAX_RESTORE_NOTE_LENGTH = 250;
 
-    private final JdbcWorkbookRepository workbookRepository;
-    private final JdbcProjectRepository projectRepository;
+    private final WorkbookDao workbookRepository;
+    private final ProjectDao projectRepository;
     private final ProjectService projectService;
     private final PermissionService permissionService;
     private final StorageService storageService;
@@ -93,7 +93,7 @@ public class WorkbookService {
         }
 
         String normalizedDesc = normalizeDescription(description);
-        Optional<JdbcWorkbookRepository.WorkbookRow> existingOpt =
+        Optional<WorkbookDao.WorkbookRow> existingOpt =
                 workbookRepository.findActiveByProjectAndName(projectId, resolvedName);
         if (existingOpt.isPresent() && !overwrite) {
             throw new DavsException(ErrorCode.ERR_PRJ_06);
@@ -138,7 +138,7 @@ public class WorkbookService {
         UUID workbookId;
         int versionNumber;
         if (existingOpt.isPresent()) {
-            JdbcWorkbookRepository.WorkbookRow existing = existingOpt.get();
+            WorkbookDao.WorkbookRow existing = existingOpt.get();
             workbookId = existing.id();
             versionNumber = existing.currentVersion() + 1;
             workbookRepository.updateWorkbookOnOverwrite(
@@ -179,7 +179,7 @@ public class WorkbookService {
             );
         }
 
-        JdbcWorkbookRepository.WorkbookRow savedRow = workbookRepository.findById(workbookId)
+        WorkbookDao.WorkbookRow savedRow = workbookRepository.findById(workbookId)
                 .orElseThrow(() -> new IllegalStateException("Workbook not found after upload: " + workbookId));
 
         auditService.log(AuditEvent.of(
@@ -201,7 +201,7 @@ public class WorkbookService {
 
     @Transactional(readOnly = true)
     public WorkbookDto getWorkbook(UUID workbookId, DavsUser actor) {
-        JdbcWorkbookRepository.WorkbookRow row = getWorkbookRowOrThrow(workbookId);
+        WorkbookDao.WorkbookRow row = getWorkbookRowOrThrow(workbookId);
         requireViewPermission(actor, row);
         return workbookRepository.toDto(row);
     }
@@ -221,11 +221,11 @@ public class WorkbookService {
 
     @Transactional(readOnly = true)
     public List<WorkbookVersionDto> listVersions(UUID workbookId, DavsUser actor) {
-        JdbcWorkbookRepository.WorkbookRow row = getWorkbookRowOrThrow(workbookId);
+        WorkbookDao.WorkbookRow row = getWorkbookRowOrThrow(workbookId);
         requireViewPermission(actor, row);
         return workbookRepository.listVersions(workbookId, row.currentVersion())
                 .stream()
-                .map(JdbcWorkbookRepository.VersionRow::toDto)
+                .map(WorkbookDao.VersionRow::toDto)
                 .toList();
     }
 
@@ -236,7 +236,7 @@ public class WorkbookService {
             RestoreWorkbookVersionRequest request,
             DavsUser actor
     ) {
-        JdbcWorkbookRepository.WorkbookRow workbook = getWorkbookRowOrThrow(workbookId);
+        WorkbookDao.WorkbookRow workbook = getWorkbookRowOrThrow(workbookId);
         requireWritePermission(actor, workbook);
 
         String note = request != null && request.note() != null ? request.note().trim() : "";
@@ -247,7 +247,7 @@ public class WorkbookService {
             );
         }
 
-        JdbcWorkbookRepository.VersionRow targetVersion = workbookRepository
+        WorkbookDao.VersionRow targetVersion = workbookRepository
                 .findVersion(workbookId, versionNumber, workbook.currentVersion())
                 .orElseThrow(() -> new DavsException(ErrorCode.ERR_PRJ_09));
         if (targetVersion.purged()) {
@@ -279,16 +279,16 @@ public class WorkbookService {
         ));
 
         return workbookRepository.findVersion(workbookId, newVersionNumber, newVersionNumber)
-                .map(JdbcWorkbookRepository.VersionRow::toDto)
+                .map(WorkbookDao.VersionRow::toDto)
                 .orElseThrow(() -> new IllegalStateException("Restored version not found: " + newVersionNumber));
     }
 
     @Transactional
     public DownloadedVersion downloadVersion(UUID workbookId, int versionNumber, DavsUser actor) {
-        JdbcWorkbookRepository.WorkbookRow workbook = getWorkbookRowOrThrow(workbookId);
+        WorkbookDao.WorkbookRow workbook = getWorkbookRowOrThrow(workbookId);
         requireDownloadPermission(actor, workbook);
 
-        JdbcWorkbookRepository.VersionRow version = workbookRepository
+        WorkbookDao.VersionRow version = workbookRepository
                 .findVersion(workbookId, versionNumber, workbook.currentVersion())
                 .orElseThrow(() -> new DavsException(ErrorCode.ERR_PRJ_09));
         if (version.purged()) {
@@ -317,7 +317,7 @@ public class WorkbookService {
 
     @Transactional
     public void deleteVersion(UUID workbookId, int versionNumber, DavsUser actor) {
-        JdbcWorkbookRepository.WorkbookRow workbook = getWorkbookRowOrThrow(workbookId);
+        WorkbookDao.WorkbookRow workbook = getWorkbookRowOrThrow(workbookId);
         requireWritePermission(actor, workbook);
 
         if (versionNumber == workbook.currentVersion()) {
@@ -327,7 +327,7 @@ public class WorkbookService {
             );
         }
 
-        JdbcWorkbookRepository.VersionRow version = workbookRepository
+        WorkbookDao.VersionRow version = workbookRepository
                 .findVersion(workbookId, versionNumber, workbook.currentVersion())
                 .orElseThrow(() -> new DavsException(ErrorCode.ERR_PRJ_09));
         if (version.purged()) {
@@ -354,9 +354,9 @@ public class WorkbookService {
 
     private void enforceVersionRetention(UUID workbookId, int currentVersion) {
         int maxVersions = settingsService.getInt(SettingKey.WORKBOOK_MAX_VERSIONS);
-        List<JdbcWorkbookRepository.VersionRow> excess = workbookRepository
+        List<WorkbookDao.VersionRow> excess = workbookRepository
                 .findActiveVersionsExceedingLimit(workbookId, currentVersion, maxVersions);
-        for (JdbcWorkbookRepository.VersionRow oldVersion : excess) {
+        for (WorkbookDao.VersionRow oldVersion : excess) {
             if (oldVersion.versionNumber() == currentVersion) {
                 continue;
             }
@@ -375,12 +375,12 @@ public class WorkbookService {
         }
     }
 
-    private JdbcWorkbookRepository.WorkbookRow getWorkbookRowOrThrow(UUID workbookId) {
+    private WorkbookDao.WorkbookRow getWorkbookRowOrThrow(UUID workbookId) {
         return workbookRepository.findById(workbookId)
                 .orElseThrow(() -> new DavsException(ErrorCode.ERR_PRJ_02));
     }
 
-    private boolean canViewWorkbook(DavsUser actor, JdbcWorkbookRepository.WorkbookRow row) {
+    private boolean canViewWorkbook(DavsUser actor, WorkbookDao.WorkbookRow row) {
         if (actor == null) {
             return false;
         }
@@ -396,13 +396,13 @@ public class WorkbookService {
                 || permissionService.can(actor, Capability.VIEW, ResourceRef.workbook(row.id()));
     }
 
-    private void requireViewPermission(DavsUser actor, JdbcWorkbookRepository.WorkbookRow row) {
+    private void requireViewPermission(DavsUser actor, WorkbookDao.WorkbookRow row) {
         if (!canViewWorkbook(actor, row)) {
             throw new DavsException(ErrorCode.ERR_PRJ_03);
         }
     }
 
-    private void requireDownloadPermission(DavsUser actor, JdbcWorkbookRepository.WorkbookRow row) {
+    private void requireDownloadPermission(DavsUser actor, WorkbookDao.WorkbookRow row) {
         if (actor == null || !actor.getSiteRole().supports(Capability.DOWNLOAD)) {
             throw new DavsException(ErrorCode.ERR_PRJ_03);
         }
@@ -421,7 +421,7 @@ public class WorkbookService {
         throw new DavsException(ErrorCode.ERR_PRJ_03);
     }
 
-    private void requireWritePermission(DavsUser actor, JdbcWorkbookRepository.WorkbookRow row) {
+    private void requireWritePermission(DavsUser actor, WorkbookDao.WorkbookRow row) {
         if (actor == null || !actor.getSiteRole().supports(Capability.SAVE)) {
             throw new DavsException(ErrorCode.ERR_PRJ_03);
         }

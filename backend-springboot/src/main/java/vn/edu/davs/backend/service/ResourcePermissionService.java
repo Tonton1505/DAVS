@@ -1,8 +1,8 @@
 package vn.edu.davs.backend.service;
 
-import vn.edu.davs.backend.dao.JdbcProjectRepository;
-import vn.edu.davs.backend.dao.JdbcResourcePermissionRepository;
+import vn.edu.davs.backend.dao.ProjectDao;
 import vn.edu.davs.backend.dao.ProjectResourceMetadataResolver;
+import vn.edu.davs.backend.dao.ResourcePermissionDao;
 import vn.edu.davs.backend.dto.EffectivePermissionsResponse;
 import vn.edu.davs.backend.dto.PermissionRuleDto;
 import vn.edu.davs.backend.dto.PermissionSubjectDto;
@@ -52,16 +52,16 @@ public class ResourcePermissionService {
 
     private static final int MAX_PARENT_DEPTH = 5;
 
-    private final JdbcResourcePermissionRepository permissionRepository;
-    private final JdbcProjectRepository projectRepository;
+    private final ResourcePermissionDao permissionRepository;
+    private final ProjectDao projectRepository;
     private final PermissionService permissionService;
     private final AuditService auditService;
     private final Map<ResourceType, ResourceMetadataResolver> resolvers = new ConcurrentHashMap<>();
 
     @Autowired
     public ResourcePermissionService(
-            JdbcResourcePermissionRepository permissionRepository,
-            JdbcProjectRepository projectRepository,
+            ResourcePermissionDao permissionRepository,
+            ProjectDao projectRepository,
             PermissionService permissionService,
             AuditService auditService,
             List<ResourceMetadataResolver> resolverBeans
@@ -172,7 +172,7 @@ public class ResourcePermissionService {
 
         // Validate subjects (VAL-PRJ-10) & deduplicate with BUS-PRJ-07 (DENY overrides ALLOW)
         Map<RuleKey, UpdateResourcePermissionsRequest.RuleInput> deduplicated = new LinkedHashMap<>();
-        Map<UUID, JdbcResourcePermissionRepository.UserSubjectRow> userCache = new HashMap<>();
+        Map<UUID, ResourcePermissionDao.UserSubjectRow> userCache = new HashMap<>();
 
         for (var input : incoming) {
             if (input.subjectType() == SubjectType.USER) {

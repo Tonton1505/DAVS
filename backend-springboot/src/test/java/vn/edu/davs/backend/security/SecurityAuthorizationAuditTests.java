@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import vn.edu.davs.backend.controller.AdminSettingsController;
 import vn.edu.davs.backend.controller.ConnectedAppController;
-import vn.edu.davs.backend.controller.DashboardController;
+import vn.edu.davs.backend.rest.DashboardController;
 import vn.edu.davs.backend.controller.FormulaController;
 import vn.edu.davs.backend.controller.GroupController;
 import vn.edu.davs.backend.controller.ParameterController;

@@ -1,8 +1,8 @@
 package vn.edu.davs.backend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import vn.edu.davs.backend.dao.JdbcDashboardRepository;
-import vn.edu.davs.backend.dao.JdbcWorkbookRepository;
+import vn.edu.davs.backend.dao.DashboardDao;
+import vn.edu.davs.backend.dao.WorkbookDao;
 import vn.edu.davs.backend.dao.VizRepository;
 import vn.edu.davs.backend.dto.AuditEvent;
 import vn.edu.davs.backend.dto.CreateDashboardRequest;
@@ -41,8 +41,8 @@ public class DashboardService {
             UUID.fromString("00000000-0000-0000-0000-000000000101");
 
     private final VizRepository vizRepository;
-    private final JdbcDashboardRepository dashboardRepository;
-    private final JdbcWorkbookRepository workbookRepository;
+    private final DashboardDao dashboardRepository;
+    private final WorkbookDao workbookRepository;
     private final PermissionService permissionService;
     private final AuditService auditService;
     private final ObjectMapper objectMapper;
@@ -51,8 +51,8 @@ public class DashboardService {
     @Autowired
     public DashboardService(
             VizRepository vizRepository,
-            JdbcDashboardRepository dashboardRepository,
-            JdbcWorkbookRepository workbookRepository,
+            DashboardDao dashboardRepository,
+            WorkbookDao workbookRepository,
             PermissionService permissionService,
             AuditService auditService,
             ObjectMapper objectMapper,
@@ -72,8 +72,8 @@ public class DashboardService {
     }
 
     public DashboardService(
-            JdbcDashboardRepository dashboardRepository,
-            JdbcWorkbookRepository workbookRepository,
+            DashboardDao dashboardRepository,
+            WorkbookDao workbookRepository,
             PermissionService permissionService,
             AuditService auditService,
             ObjectMapper objectMapper
@@ -82,8 +82,8 @@ public class DashboardService {
     }
 
     public DashboardService(
-            JdbcDashboardRepository dashboardRepository,
-            JdbcWorkbookRepository workbookRepository,
+            DashboardDao dashboardRepository,
+            WorkbookDao workbookRepository,
             PermissionService permissionService,
             AuditService auditService,
             ObjectMapper objectMapper,
@@ -157,7 +157,7 @@ public class DashboardService {
     @Transactional
     public DashboardDto create(CreateDashboardRequest request, DavsUser actor) {
         UUID wbId = request.workbookId();
-        JdbcWorkbookRepository.WorkbookRow wb = workbookRepository.findById(wbId)
+        WorkbookDao.WorkbookRow wb = workbookRepository.findById(wbId)
                 .orElseThrow(() -> new DavsException(ErrorCode.ERR_PRJ_03, "Không tìm thấy workbook"));
 
         ResourceRef wbRef = new ResourceRef(ResourceType.WORKBOOK, wbId);
@@ -192,7 +192,7 @@ public class DashboardService {
             throw new DavsException(ErrorCode.ERR_PRJ_03, "Bạn không có quyền xem dashboard này");
         }
 
-        JdbcWorkbookRepository.WorkbookRow wb = workbookRepository.findById(dashboard.workbookId()).orElse(null);
+        WorkbookDao.WorkbookRow wb = workbookRepository.findById(dashboard.workbookId()).orElse(null);
         String workbookName = wb != null ? wb.name() : "Workbook";
 
         boolean canView = true;

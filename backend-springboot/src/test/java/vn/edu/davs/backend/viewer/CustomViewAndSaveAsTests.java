@@ -2,10 +2,10 @@ package vn.edu.davs.backend.viewer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import vn.edu.davs.backend.exception.DavsException;
-import vn.edu.davs.backend.dao.JdbcCustomViewRepository;
-import vn.edu.davs.backend.dao.JdbcDashboardRepository;
-import vn.edu.davs.backend.dao.JdbcProjectRepository;
-import vn.edu.davs.backend.dao.JdbcWorkbookRepository;
+import vn.edu.davs.backend.dao.CustomViewDao;
+import vn.edu.davs.backend.dao.DashboardDao;
+import vn.edu.davs.backend.dao.WorkbookDao;
+import vn.edu.davs.backend.dao.ProjectDao;
 import vn.edu.davs.backend.dto.CreateCustomViewRequest;
 import vn.edu.davs.backend.dto.CustomViewDto;
 import vn.edu.davs.backend.dto.DashboardDto;
@@ -43,13 +43,13 @@ import static org.mockito.Mockito.when;
 class CustomViewAndSaveAsTests {
 
     @Mock
-    private JdbcCustomViewRepository customViewRepository;
+    private CustomViewDao customViewRepository;
     @Mock
-    private JdbcDashboardRepository dashboardRepository;
+    private DashboardDao dashboardRepository;
     @Mock
-    private JdbcWorkbookRepository workbookRepository;
+    private WorkbookDao workbookRepository;
     @Mock
-    private JdbcProjectRepository projectRepository;
+    private ProjectDao projectRepository;
     @Mock
     private PermissionService permissionService;
     @Mock
@@ -152,7 +152,7 @@ class CustomViewAndSaveAsTests {
         );
         when(permissionService.can(eq(author), eq(Capability.PUBLISH), any(ResourceRef.class))).thenReturn(true);
 
-        JdbcWorkbookRepository.WorkbookRow source = new JdbcWorkbookRepository.WorkbookRow(
+        WorkbookDao.WorkbookRow source = new WorkbookDao.WorkbookRow(
                 sourceWbId, UUID.randomUUID(), "Project", "Source", "Desc", 1, author.getId(), "Author",
                 "IMPORTED", false, 1024L, "source.twbx", Instant.now(), Instant.now()
         );
@@ -163,7 +163,7 @@ class CustomViewAndSaveAsTests {
                 eq(author.getId()), anyString(), eq(false)))
                 .thenReturn(copyWbId);
 
-        JdbcWorkbookRepository.WorkbookRow copyRow = new JdbcWorkbookRepository.WorkbookRow(
+        WorkbookDao.WorkbookRow copyRow = new WorkbookDao.WorkbookRow(
                 copyWbId, targetProjId, "Project", "Workbook Copy", "Mô tả copy", 1, author.getId(), "Author",
                 "IMPORTED", false, 1024L, "copy.twbx", Instant.now(), Instant.now()
         );
