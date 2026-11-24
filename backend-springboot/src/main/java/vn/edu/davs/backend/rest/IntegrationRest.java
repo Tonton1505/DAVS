@@ -11,13 +11,11 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * Admin-only REST endpoints for UC25 External Platform Integrations ({@code /api/v1/integrations}).
  */
-@RequestMapping("/api/v1/integrations")
 public interface IntegrationRest {
 
 

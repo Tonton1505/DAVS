@@ -17,10 +17,12 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMapping;
 import vn.edu.davs.backend.rest.AuditLogRest;
 
 @RequiredArgsConstructor
 @RestController
+@RequestMapping("/api/v1/audit-logs")
 public class AuditLogRestImpl implements AuditLogRest {
 
 

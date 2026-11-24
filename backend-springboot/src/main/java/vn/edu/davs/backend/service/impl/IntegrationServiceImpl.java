@@ -5,7 +5,7 @@ import vn.edu.davs.backend.dto.AuditEvent;
 import vn.edu.davs.backend.dto.IntegrationConnectResponse;
 import vn.edu.davs.backend.dto.IntegrationDto;
 import vn.edu.davs.backend.enu.ErrorCode;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.model.DavsUser;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;

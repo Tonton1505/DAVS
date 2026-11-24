@@ -10,7 +10,7 @@ import vn.edu.davs.backend.dto.PrepPreviewResponse;
 import vn.edu.davs.backend.dto.PrepRunDto;
 import vn.edu.davs.backend.dto.SavePrepFlowRequest;
 import vn.edu.davs.backend.enu.ErrorCode;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.model.DavsUser;
 import java.time.Instant;
 import java.util.ArrayList;

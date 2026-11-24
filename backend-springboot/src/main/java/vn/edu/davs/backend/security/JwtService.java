@@ -4,7 +4,7 @@ import vn.edu.davs.backend.config.SecurityProperties;
 import vn.edu.davs.backend.enu.SiteRole;
 import vn.edu.davs.backend.model.DavsUser;
 
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.enu.ErrorCode;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;

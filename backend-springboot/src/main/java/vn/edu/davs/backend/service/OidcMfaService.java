@@ -2,7 +2,7 @@ package vn.edu.davs.backend.service;
 
 import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.service.AuthService.AuthSessionResult;
 
 /**

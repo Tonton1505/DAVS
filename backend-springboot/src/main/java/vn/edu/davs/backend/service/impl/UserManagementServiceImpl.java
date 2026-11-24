@@ -8,7 +8,7 @@ import vn.edu.davs.backend.dto.UserManagementDto;
 import vn.edu.davs.backend.enu.EmailTemplate;
 import vn.edu.davs.backend.enu.ErrorCode;
 import vn.edu.davs.backend.enu.SiteRole;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.model.DavsUser;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

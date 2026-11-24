@@ -3,7 +3,7 @@ package vn.edu.davs.backend.storage;
 import vn.edu.davs.backend.service.FileNameSanitizer;
 import vn.edu.davs.backend.service.MagicBytesValidator;
 
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.enu.ErrorCode;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;

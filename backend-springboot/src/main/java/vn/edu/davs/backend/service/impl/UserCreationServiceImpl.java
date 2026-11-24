@@ -8,7 +8,7 @@ import vn.edu.davs.backend.dto.ImportJobStatusResponse;
 import vn.edu.davs.backend.dto.LicensePoolDto;
 import vn.edu.davs.backend.enu.AuthMethod;
 import vn.edu.davs.backend.dto.AuditEvent;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.enu.ErrorCode;
 import vn.edu.davs.backend.model.DavsUser;
 import vn.edu.davs.backend.enu.SiteRole;

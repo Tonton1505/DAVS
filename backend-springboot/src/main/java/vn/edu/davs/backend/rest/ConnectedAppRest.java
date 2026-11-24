@@ -17,13 +17,11 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 /**
  * REST controller for UC26: Connected Applications Management (FR-INT-01, URD-18, SCR-26).
  * Handles Direct Trust, OAuth 2.0 Trust, secret rotation, and token invalidation.
  */
-@RequestMapping("/api/v1/connected-apps")
 public interface ConnectedAppRest {
 
 

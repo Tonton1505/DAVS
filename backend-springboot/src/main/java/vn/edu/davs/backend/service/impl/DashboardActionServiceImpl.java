@@ -5,7 +5,7 @@ import vn.edu.davs.backend.dto.DashboardActionDto;
 import vn.edu.davs.backend.dto.DashboardDto;
 import vn.edu.davs.backend.dto.SaveActionsRequest;
 import vn.edu.davs.backend.enu.ErrorCode;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;

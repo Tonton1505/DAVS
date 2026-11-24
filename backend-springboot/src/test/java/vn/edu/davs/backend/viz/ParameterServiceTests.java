@@ -12,7 +12,7 @@ import vn.edu.davs.backend.dao.VizRepository;
 import vn.edu.davs.backend.dto.ParameterDto;
 import vn.edu.davs.backend.dto.SaveParameterRequest;
 import vn.edu.davs.backend.enu.ErrorCode;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.service.ParameterService;
 import java.math.BigDecimal;
 import java.time.Instant;

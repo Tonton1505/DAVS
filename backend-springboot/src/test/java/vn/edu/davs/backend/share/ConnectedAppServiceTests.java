@@ -20,7 +20,7 @@ import vn.edu.davs.backend.dto.ConnectedAppTokenResponse;
 import vn.edu.davs.backend.dto.CreateConnectedAppRequest;
 import vn.edu.davs.backend.enu.ErrorCode;
 import vn.edu.davs.backend.enu.SiteRole;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.model.DavsUser;
 import vn.edu.davs.backend.service.AuditService;
 import vn.edu.davs.backend.service.ConnectedAppService;

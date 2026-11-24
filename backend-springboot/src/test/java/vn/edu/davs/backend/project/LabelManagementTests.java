@@ -9,7 +9,7 @@ import vn.edu.davs.backend.dto.LabelDto;
 import vn.edu.davs.backend.dto.LabelTargetRequest;
 import vn.edu.davs.backend.enu.ErrorCode;
 import vn.edu.davs.backend.enu.SiteRole;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.model.DavsUser;
 import vn.edu.davs.backend.service.AuditService;
 import vn.edu.davs.backend.service.LabelService;

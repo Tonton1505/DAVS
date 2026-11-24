@@ -13,7 +13,7 @@ import vn.edu.davs.backend.dao.VizRepository;
 import vn.edu.davs.backend.dto.FormulaValidateResponse;
 import vn.edu.davs.backend.dto.SaveCalculatedFieldRequest;
 import vn.edu.davs.backend.enu.ErrorCode;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.service.FormulaService;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;

@@ -15,7 +15,7 @@ import vn.edu.davs.backend.dto.DashboardActionDto;
 import vn.edu.davs.backend.dto.DashboardDto;
 import vn.edu.davs.backend.dto.SaveActionsRequest;
 import vn.edu.davs.backend.enu.ErrorCode;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.service.DashboardActionService;
 import java.time.Instant;
 import java.util.ArrayList;

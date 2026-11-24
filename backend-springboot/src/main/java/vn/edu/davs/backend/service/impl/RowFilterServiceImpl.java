@@ -7,7 +7,7 @@ import vn.edu.davs.backend.dto.RowFilterDto;
 import vn.edu.davs.backend.dto.SaveRowFilterRequest;
 import vn.edu.davs.backend.enu.ErrorCode;
 import vn.edu.davs.backend.enu.SiteRole;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.model.DavsUser;
 import java.util.ArrayList;
 import java.util.List;

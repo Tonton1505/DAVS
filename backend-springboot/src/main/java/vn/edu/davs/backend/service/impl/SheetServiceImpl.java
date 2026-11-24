@@ -5,7 +5,7 @@ import vn.edu.davs.backend.dto.SaveSheetRequest;
 import vn.edu.davs.backend.dto.SheetDto;
 import vn.edu.davs.backend.dto.TooltipConfigDto;
 import vn.edu.davs.backend.enu.ErrorCode;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;

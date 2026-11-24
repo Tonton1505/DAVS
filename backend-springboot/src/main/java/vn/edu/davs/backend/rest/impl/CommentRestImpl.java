@@ -17,10 +17,12 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMapping;
 import vn.edu.davs.backend.rest.CommentRest;
 
 @RequiredArgsConstructor
 @RestController
+@RequestMapping("/api/v1")
 public class CommentRestImpl implements CommentRest {
 
 

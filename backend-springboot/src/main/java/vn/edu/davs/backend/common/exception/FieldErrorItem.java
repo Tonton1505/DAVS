@@ -1,4 +1,4 @@
-package vn.edu.davs.backend.exception;
+package vn.edu.davs.backend.common.exception;
 
 /**
  * Represents a validation error on a specific input field.

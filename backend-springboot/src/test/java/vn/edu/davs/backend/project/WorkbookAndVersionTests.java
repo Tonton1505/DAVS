@@ -12,7 +12,7 @@ import vn.edu.davs.backend.enu.Bucket;
 import vn.edu.davs.backend.enu.ErrorCode;
 import vn.edu.davs.backend.enu.SettingKey;
 import vn.edu.davs.backend.enu.SiteRole;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.model.DavsUser;
 import vn.edu.davs.backend.model.StoredObject;
 import vn.edu.davs.backend.service.AuditService;

@@ -1,6 +1,6 @@
 package vn.edu.davs.backend.security;
 
-import vn.edu.davs.backend.exception.ApiErrorResponse;
+import vn.edu.davs.backend.common.exception.ApiErrorResponse;
 import vn.edu.davs.backend.enu.ErrorCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;

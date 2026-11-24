@@ -11,7 +11,7 @@ import vn.edu.davs.backend.dto.CreateConnectedAppRequest;
 import vn.edu.davs.backend.dto.UpdateConnectedAppRequest;
 import vn.edu.davs.backend.enu.ErrorCode;
 import vn.edu.davs.backend.enu.SiteRole;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.model.DavsUser;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;

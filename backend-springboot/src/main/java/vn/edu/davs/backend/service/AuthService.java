@@ -5,7 +5,7 @@ import vn.edu.davs.backend.dto.AuthTokenResponse;
 import vn.edu.davs.backend.dto.AuthUserDto;
 import vn.edu.davs.backend.dto.LoginRequest;
 import vn.edu.davs.backend.model.AuthUserRecord;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.model.DavsUser;
 import java.time.Instant;
 import java.util.UUID;

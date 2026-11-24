@@ -1,7 +1,7 @@
 package vn.edu.davs.backend.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.dao.ICustomViewDao;
 import vn.edu.davs.backend.dao.IDashboardDao;
 import vn.edu.davs.backend.dao.IProjectDao;

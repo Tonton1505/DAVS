@@ -1,6 +1,6 @@
 package vn.edu.davs.backend.service.impl;
 
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.dao.IDashboardDao;
 import vn.edu.davs.backend.dto.AuditEvent;
 import vn.edu.davs.backend.dto.DashboardDto;

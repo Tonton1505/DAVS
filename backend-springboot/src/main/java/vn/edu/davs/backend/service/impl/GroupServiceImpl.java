@@ -10,7 +10,7 @@ import vn.edu.davs.backend.dto.UpdateGroupRequest;
 import vn.edu.davs.backend.dto.UserManagementDto;
 import vn.edu.davs.backend.enu.ErrorCode;
 import vn.edu.davs.backend.enu.SiteRole;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.model.DavsUser;
 import java.util.LinkedHashSet;
 import java.util.List;

@@ -18,7 +18,7 @@ import vn.edu.davs.backend.dto.PublishWorkbookResponse;
 import vn.edu.davs.backend.enu.Capability;
 import vn.edu.davs.backend.enu.ErrorCode;
 import vn.edu.davs.backend.enu.SiteRole;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.model.DavsUser;
 import vn.edu.davs.backend.service.AuditService;
 import vn.edu.davs.backend.service.PermissionService;

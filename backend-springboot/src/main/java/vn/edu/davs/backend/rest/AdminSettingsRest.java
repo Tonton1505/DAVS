@@ -12,12 +12,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 /**
  * Admin-only REST endpoints for reading and updating {@code system_settings} at runtime (T-008).
  */
-@RequestMapping("/api/v1/admin/settings")
 @Tag(name = "Admin Settings", description = "Quản lý cấu hình hệ thống (chỉ SITE_ADMIN)")
 public interface AdminSettingsRest {
 

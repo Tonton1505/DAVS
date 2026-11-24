@@ -11,7 +11,7 @@ import vn.edu.davs.backend.service.OidcMfaService.MfaSetupResponse;
 import vn.edu.davs.backend.service.OidcMfaService.MfaStatusResponse;
 import vn.edu.davs.backend.service.OidcMfaService.OidcAuthorizeResponse;
 import vn.edu.davs.backend.service.OidcMfaService.SsoConfigResponse;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.enu.ErrorCode;
 import vn.edu.davs.backend.model.DavsUser;
 import jakarta.servlet.http.Cookie;
@@ -26,10 +26,12 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMapping;
 import vn.edu.davs.backend.rest.AuthRest;
 
 @RequiredArgsConstructor
 @RestController
+@RequestMapping("/api/v1/auth")
 public class AuthRestImpl implements AuthRest {
 
 

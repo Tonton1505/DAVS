@@ -2,7 +2,7 @@ package vn.edu.davs.backend.security;
 
 import vn.edu.davs.backend.model.DavsUser;
 
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

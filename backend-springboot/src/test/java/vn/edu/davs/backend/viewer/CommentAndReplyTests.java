@@ -3,7 +3,7 @@ package vn.edu.davs.backend.viewer;
 
 import vn.edu.davs.backend.service.impl.CommentServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.dao.ICommentDao;
 import vn.edu.davs.backend.dto.CommentDto;
 import vn.edu.davs.backend.dto.CreateCommentRequest;

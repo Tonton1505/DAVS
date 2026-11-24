@@ -14,7 +14,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 import vn.edu.davs.backend.config.SecurityProperties.OidcProperties;
 import vn.edu.davs.backend.enu.ErrorCode;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 
 /**
  * Spring {@link RestClient}-based OIDC Authorization Code + PKCE client.

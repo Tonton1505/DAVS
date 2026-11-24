@@ -5,7 +5,7 @@ import vn.edu.davs.backend.dto.CalculatedFieldDto;
 import vn.edu.davs.backend.dto.FormulaValidateResponse;
 import vn.edu.davs.backend.dto.SaveCalculatedFieldRequest;
 import vn.edu.davs.backend.enu.ErrorCode;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;

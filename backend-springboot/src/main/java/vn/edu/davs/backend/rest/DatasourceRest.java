@@ -26,7 +26,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -34,7 +33,6 @@ import org.springframework.web.multipart.MultipartFile;
  * REST endpoints for UC11 (Connectors &amp; Data Source Connections),
  * UC13 (Semantic Data Model), and UC14 (Extract Management &amp; Refresh).
  */
-@RequestMapping("/api/v1")
 public interface DatasourceRest {
 
 

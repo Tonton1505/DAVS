@@ -1,10 +1,10 @@
 package vn.edu.davs.backend.common.error;
 
 import vn.edu.davs.backend.enu.ErrorCode;
-import vn.edu.davs.backend.exception.DavsException;
-import vn.edu.davs.backend.exception.FieldErrorItem;
-import vn.edu.davs.backend.exception.GlobalExceptionHandler;
-import vn.edu.davs.backend.exception.ValidationErrorCode;
+import vn.edu.davs.backend.common.exception.DavsException;
+import vn.edu.davs.backend.common.exception.FieldErrorItem;
+import vn.edu.davs.backend.common.exception.GlobalExceptionHandler;
+import vn.edu.davs.backend.common.exception.ValidationErrorCode;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;

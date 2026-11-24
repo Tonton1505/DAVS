@@ -17,13 +17,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * Admin REST controller for Row-Level Security (RLS) policy management (T-101).
  */
-@RequestMapping("/api/v1/admin/rls")
 public interface RowFilterRest {
 
 

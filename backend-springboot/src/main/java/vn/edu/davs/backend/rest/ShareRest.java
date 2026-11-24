@@ -13,14 +13,12 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * REST controller for UC22: Content Sharing (FR-SHR-02, URD-15, SCR-22).
  * Supports recipient sharing, permission level ceilings, and embed link generation.
  */
-@RequestMapping("/api/v1")
 public interface ShareRest {
 
 

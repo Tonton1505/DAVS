@@ -12,13 +12,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 /**
  * REST controller for UC21: Publish Workbook (FR-SHR-01, URD-14, SCR-21).
  * Supports Internal Server, Cloud, and Public destinations with permission and security validation.
  */
-@RequestMapping("/api/v1/workbooks")
 public interface PublishRest {
 
 

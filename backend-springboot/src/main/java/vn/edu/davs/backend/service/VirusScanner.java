@@ -1,6 +1,6 @@
 package vn.edu.davs.backend.service;
 
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.enu.ErrorCode;
 import java.io.InputStream;
 

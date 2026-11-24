@@ -3,7 +3,7 @@ package vn.edu.davs.backend.service;
 import vn.edu.davs.backend.dao.ResourceMetadataResolver;
 import vn.edu.davs.backend.enu.Capability;
 import vn.edu.davs.backend.model.ResourceRef;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.enu.ErrorCode;
 import vn.edu.davs.backend.model.DavsUser;
 import vn.edu.davs.backend.enu.SiteRole;

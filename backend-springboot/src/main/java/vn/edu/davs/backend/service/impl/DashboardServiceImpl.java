@@ -14,7 +14,7 @@ import vn.edu.davs.backend.dto.SaveDashboardRequest;
 import vn.edu.davs.backend.enu.Capability;
 import vn.edu.davs.backend.enu.ErrorCode;
 import vn.edu.davs.backend.enu.ResourceType;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.model.DavsUser;
 import vn.edu.davs.backend.model.ResourceRef;
 import java.time.Instant;

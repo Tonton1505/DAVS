@@ -11,10 +11,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 @Tag(name = "UC23 - Report & Data Export", description = "Export dashboard and data to CSV, Excel, PDF, PNG, PowerPoint")
-@RequestMapping("/api/v1/exports")
 public interface ExportRest {
 
 

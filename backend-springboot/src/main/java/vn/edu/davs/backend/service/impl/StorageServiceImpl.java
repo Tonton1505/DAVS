@@ -3,7 +3,7 @@ package vn.edu.davs.backend.service.impl;
 import vn.edu.davs.backend.config.StorageProperties;
 import vn.edu.davs.backend.enu.Bucket;
 import vn.edu.davs.backend.model.StoredObject;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.enu.ErrorCode;
 import vn.edu.davs.backend.enu.SettingKey;
 import io.minio.BucketExistsArgs;

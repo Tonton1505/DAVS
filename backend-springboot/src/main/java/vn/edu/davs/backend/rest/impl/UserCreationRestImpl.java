@@ -7,7 +7,7 @@ import vn.edu.davs.backend.dto.ImportJobStatusResponse;
 import vn.edu.davs.backend.dto.LicensePoolDto;
 import vn.edu.davs.backend.enu.AuthMethod;
 import vn.edu.davs.backend.service.UserCreationService;
-import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.common.exception.DavsException;
 import vn.edu.davs.backend.enu.ErrorCode;
 import vn.edu.davs.backend.model.DavsUser;
 import vn.edu.davs.backend.enu.SiteRole;
@@ -26,11 +26,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.multipart.MultipartFile;
 import vn.edu.davs.backend.rest.UserCreationRest;
 
 @RequiredArgsConstructor
 @RestController
+@RequestMapping("/api/v1/users")
 public class UserCreationRestImpl implements UserCreationRest {
 
 
