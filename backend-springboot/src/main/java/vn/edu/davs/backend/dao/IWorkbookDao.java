@@ -18,6 +18,10 @@ public interface IWorkbookDao {
 
     Optional<WorkbookRow> findById(UUID workbookId);
 
+    default Optional<String> findDefinitionById(UUID workbookId) {
+        return Optional.empty();
+    }
+
 
     List<WorkbookRow> listByProject(UUID projectId);
 

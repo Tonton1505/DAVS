@@ -23,6 +23,14 @@ public class WorkbookDaoImpl implements IWorkbookDao {
     private final ILabelDao labelRepository;
 
     @Override
+    public Optional<String> findDefinitionById(UUID workbookId) {
+        String sql = "SELECT definition::text FROM workbooks WHERE id = ? AND deleted_at IS NULL";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString(1), workbookId)
+                .stream()
+                .findFirst();
+    }
+
+    @Override
     public Optional<WorkbookRow> findActiveByProjectAndName(UUID projectId, String name) {
         String sql = """
                 SELECT w.id, w.project_id, p.name AS project_name, w.name, w.description,

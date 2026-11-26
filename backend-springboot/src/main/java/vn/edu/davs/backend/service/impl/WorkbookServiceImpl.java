@@ -33,6 +33,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import vn.edu.davs.backend.service.WorkbookService;
 import vn.edu.davs.backend.util.FileUtil;
+import vn.edu.davs.backend.util.WorkbookDataExtractor;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import vn.edu.davs.backend.service.AuditService;
 import vn.edu.davs.backend.service.PermissionService;
 import vn.edu.davs.backend.service.ProjectService;
@@ -56,6 +58,8 @@ public class WorkbookServiceImpl implements WorkbookService {
             "png", "jpg", "jpeg", "gif", "parquet", "davs"
     );
 
+
+    private static final ObjectMapper DEFINITION_MAPPER = new ObjectMapper();
 
     private final IWorkbookDao workbookRepository;
 
@@ -149,7 +153,12 @@ public class WorkbookServiceImpl implements WorkbookService {
         }
 
         boolean needsReconnect = detectNeedsReconnect(fileBytes);
-        String definitionJson = "{\"fileName\":\"" + stored.sanitizedFileName() + "\"}";
+        String definitionJson = WorkbookDataExtractor.buildDefinitionJson(
+                stored.sanitizedFileName(),
+                fileBytes,
+                stored.sizeBytes(),
+                DEFINITION_MAPPER
+        );
         String versionNote = (note != null && !note.isBlank())
                 ? note.trim()
                 : (existingOpt.isPresent() ? "Ghi đè phiên bản mới" : "Phiên bản tải lên ban đầu");

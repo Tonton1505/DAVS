@@ -173,6 +173,45 @@ export default function DashboardViewPage() {
   const currentFilters = useMemo(() => ({ region }), [region]);
   const currentParameters = useMemo(() => ({ top }), [top]);
 
+  const parsedDef = useMemo(() => {
+    if (!dashboardView?.definition) return null;
+    try {
+      const obj = JSON.parse(dashboardView.definition) as {
+        fileName?: string;
+        extension?: string;
+        sizeBytes?: number;
+        previewType?: "TABULAR" | "TABLEAU" | "FILE";
+        columns?: string[];
+        totalRows?: number;
+        sampleRows?: Array<Record<string, unknown>>;
+        labelColumn?: string;
+        metricColumn?: string;
+        primarySeries?: Array<{ name: string; value: number }>;
+        secondaryLabelColumn?: string;
+        secondarySeries?: Array<{ name: string; value: number }>;
+        sheets?: string[];
+        dashboards?: string[];
+        datasources?: string[];
+      };
+      return obj && (obj.previewType || obj.fileName) ? obj : null;
+    } catch {
+      return null;
+    }
+  }, [dashboardView?.definition]);
+
+  const isCustomWorkbook = Boolean(parsedDef);
+  const bannerSubtitle = useMemo(() => {
+    if (!parsedDef) return "Công ty ABC · Đơn vị: triệu đồng";
+    if (parsedDef.previewType === "TABULAR") {
+      return `${parsedDef.fileName || dashboardView?.workbookName || "Dữ liệu"} · ${parsedDef.totalRows ?? 0} dòng · ${parsedDef.columns?.length ?? 0} cột`;
+    }
+    if (parsedDef.previewType === "TABLEAU") {
+      return `${parsedDef.fileName || "Workbook"} · Tableau (${parsedDef.sheets?.length ?? 0} sheet, ${parsedDef.dashboards?.length ?? 0} dashboard)`;
+    }
+    const mb = parsedDef.sizeBytes != null ? ` · ${(parsedDef.sizeBytes / (1024 * 1024)).toFixed(2)} MB` : "";
+    return `${parsedDef.fileName || dashboardView?.workbookName || "Tệp tải lên"}${mb}`;
+  }, [parsedDef, dashboardView?.workbookName]);
+
   const content = (
     <>
       <PageHeader
@@ -233,7 +272,7 @@ export default function DashboardViewPage() {
               </span>
             )}
           </div>
-          <div className="text-xs text-white/60">Công ty ABC · Đơn vị: triệu đồng</div>
+          <div className="text-xs text-white/60">{bannerSubtitle}</div>
         </div>
         <div className="flex gap-1">
           <Button variant="ghost" className="text-white hover:bg-white/10">
@@ -255,6 +294,163 @@ export default function DashboardViewPage() {
           </Button>
         </div>
       </div>
+      {isCustomWorkbook && parsedDef?.previewType === "TABULAR" ? (
+        <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <ChartCard
+              title={`${parsedDef.metricColumn || "Giá trị"} theo ${parsedDef.labelColumn || "Danh mục"}`}
+              subtitle={`Top ${(parsedDef.primarySeries || []).slice(0, top).length} mục từ ${parsedDef.fileName || "tệp"}`}
+              loading={loading}
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={(parsedDef.primarySeries || []).slice(0, top)}>
+                  <CartesianGrid stroke="#E5E7EB" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fill: "#6B7280", fontSize: 10 }} />
+                  <YAxis tick={{ fill: "#6B7280", fontSize: 11 }} />
+                  <Tooltip
+                    contentStyle={{
+                      background: "#111827",
+                      border: 0,
+                      borderRadius: 8,
+                      color: "white",
+                    }}
+                  />
+                  <Bar dataKey="value" fill="#C62828" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+            <ChartCard
+              title={
+                parsedDef.secondarySeries && parsedDef.secondarySeries.length > 0
+                  ? `${parsedDef.metricColumn || "Giá trị"} theo ${parsedDef.secondaryLabelColumn || "Nhóm"}`
+                  : `Tỷ trọng theo ${parsedDef.labelColumn || "Danh mục"}`
+              }
+              subtitle={`Dữ liệu trích xuất từ ${parsedDef.fileName || "tệp"}`}
+              loading={loading}
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={(parsedDef.secondarySeries && parsedDef.secondarySeries.length > 0
+                      ? parsedDef.secondarySeries
+                      : parsedDef.primarySeries || []
+                    ).slice(0, 6)}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={45}
+                    outerRadius={72}
+                    label={({ name }) => String(name).slice(0, 14)}
+                  >
+                    {["#111827", "#C62828", "#4B5563", "#9CA3AF", "#6B7280", "#D1D5DB"].map((c) => (
+                      <Cell key={c} fill={c} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      background: "#111827",
+                      border: 0,
+                      borderRadius: 8,
+                      color: "white",
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </ChartCard>
+          </div>
+          {parsedDef.columns && parsedDef.sampleRows && parsedDef.sampleRows.length > 0 && (
+            <Card>
+              <div className="mb-3 flex items-center justify-between">
+                <div className="font-semibold text-ink">
+                  Xem trước dữ liệu ({parsedDef.sampleRows.length} / {parsedDef.totalRows ?? parsedDef.sampleRows.length} dòng)
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-border text-muted-foreground">
+                      {parsedDef.columns.slice(0, 10).map((col) => (
+                        <th key={col} className="px-2 py-2 font-medium whitespace-nowrap">
+                          {col}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {parsedDef.sampleRows.map((row, idx) => (
+                      <tr key={idx} className="border-b border-border/50 hover:bg-muted/40">
+                        {parsedDef.columns!.slice(0, 10).map((col) => (
+                          <td key={col} className="px-2 py-1.5 whitespace-nowrap">
+                            {String(row[col] ?? "")}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
+        </div>
+      ) : isCustomWorkbook && parsedDef?.previewType === "TABLEAU" ? (
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card>
+            <div className="font-semibold text-ink">Dashboards ({parsedDef.dashboards?.length ?? 0})</div>
+            <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+              {(parsedDef.dashboards || []).length > 0 ? (
+                parsedDef.dashboards!.map((d) => <li key={d}>• {d}</li>)
+              ) : (
+                <li>Không có dashboard riêng trong file</li>
+              )}
+            </ul>
+          </Card>
+          <Card>
+            <div className="font-semibold text-ink">Worksheets ({parsedDef.sheets?.length ?? 0})</div>
+            <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+              {(parsedDef.sheets || []).length > 0 ? (
+                parsedDef.sheets!.map((s) => <li key={s}>• {s}</li>)
+              ) : (
+                <li>Không có worksheet</li>
+              )}
+            </ul>
+          </Card>
+          <Card>
+            <div className="font-semibold text-ink">Datasources ({parsedDef.datasources?.length ?? 0})</div>
+            <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+              {(parsedDef.datasources || []).length > 0 ? (
+                parsedDef.datasources!.map((ds) => <li key={ds}>• {ds}</li>)
+              ) : (
+                <li>Không có datasource</li>
+              )}
+            </ul>
+          </Card>
+        </div>
+      ) : isCustomWorkbook ? (
+        <Card className="p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-ink">
+                {dashboardView?.name || parsedDef?.fileName}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Tệp đã lưu: <span className="font-medium text-ink">{parsedDef?.fileName}</span>
+                {parsedDef?.sizeBytes != null &&
+                  ` (${(parsedDef.sizeBytes / (1024 * 1024)).toFixed(2)} MB)`}
+              </p>
+              {dashboardView?.description && (
+                <p className="mt-2 text-sm text-muted-foreground">{dashboardView.description}</p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="primary"
+                onClick={() => nav(`/workbooks/${dashboardView?.workbookId || activeDashboardId}/versions`)}
+              >
+                Lịch sử phiên bản & Tải xuống
+              </Button>
+            </div>
+          </div>
+        </Card>
+      ) : (
       <div className="grid gap-4 xl:grid-cols-[1fr_240px]">
         <div className="grid gap-4 md:grid-cols-2">
           <ChartCard
@@ -448,6 +644,7 @@ export default function DashboardViewPage() {
           </div>
         </Card>
       </div>
+      )}
       <div className="mt-4 text-xs text-muted-foreground">
         Cập nhật dữ liệu lần cuối (dataAsOf):{" "}
         {dashboardView?.dataAsOf

@@ -212,9 +212,25 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     public DashboardViewDto getDashboardView(UUID dashboardId, DavsUser actor) {
         DashboardDto dashboard = dashboardRepository.findById(dashboardId)
-                .or(() -> vizRepository.findDashboardById(dashboardId))
-                .or(dashboardRepository::findFirstActive)
-                .orElseThrow(() -> new DavsException(ErrorCode.ERR_PRJ_03, "Không tìm thấy dashboard để xem"));
+                .or(() -> vizRepository != null ? vizRepository.findDashboardById(dashboardId) : java.util.Optional.empty())
+                .orElse(null);
+
+        if (dashboard == null && workbookRepository != null) {
+            List<DashboardDto> wbDashboards = dashboardRepository.findByWorkbookId(dashboardId);
+            if (wbDashboards != null && !wbDashboards.isEmpty()) {
+                dashboard = wbDashboards.get(0);
+            } else {
+                IWorkbookDao.WorkbookRow wb = workbookRepository.findById(dashboardId).orElse(null);
+                if (wb != null) {
+                    return buildWorkbookDashboardView(wb, actor);
+                }
+            }
+        }
+
+        if (dashboard == null) {
+            dashboard = dashboardRepository.findFirstActive()
+                    .orElseThrow(() -> new DavsException(ErrorCode.ERR_PRJ_03, "Không tìm thấy dashboard để xem"));
+        }
 
         ResourceRef dRef = new ResourceRef(ResourceType.DASHBOARD, dashboard.id());
         if (!permissionService.can(actor, Capability.VIEW, dRef)) {
@@ -243,6 +259,43 @@ public class DashboardServiceImpl implements DashboardService {
                 dashboard.definition(),
                 Instant.now(),
                 canView,
+                canInteract,
+                canFilter,
+                canDownload,
+                canComment,
+                canWebEdit,
+                Collections.emptyMap()
+        );
+    }
+
+    private DashboardViewDto buildWorkbookDashboardView(IWorkbookDao.WorkbookRow wb, DavsUser actor) {
+        ResourceRef wbRef = ResourceRef.workbook(wb.id());
+        if (!permissionService.can(actor, Capability.VIEW, wbRef)) {
+            throw new DavsException(ErrorCode.ERR_PRJ_03, "Bạn không có quyền xem workbook này");
+        }
+        boolean canInteract = permissionService.can(actor, Capability.INTERACT, wbRef);
+        boolean canFilter = permissionService.can(actor, Capability.FILTER, wbRef);
+        boolean canDownload = permissionService.can(actor, Capability.DOWNLOAD, wbRef);
+        boolean canComment = permissionService.can(actor, Capability.COMMENT, wbRef);
+        boolean canWebEdit = permissionService.can(actor, Capability.WEB_EDIT, wbRef);
+
+        auditService.log(AuditEvent.of("DASHBOARD_VIEW", actor.getId(), actor.getEmail(),
+                "WORKBOOK", wb.id().toString()));
+
+        String wbDef = workbookRepository.findDefinitionById(wb.id())
+                .orElseGet(() -> "{\"fileName\":\""
+                        + (wb.fileName() != null ? wb.fileName().replace("\"", "") : "")
+                        + "\",\"sizeBytes\":" + wb.sizeBytes() + ",\"previewType\":\"FILE\"}");
+
+        return new DashboardViewDto(
+                wb.id(),
+                wb.id(),
+                wb.name(),
+                wb.name(),
+                wb.description(),
+                wbDef,
+                wb.updatedAt() != null ? wb.updatedAt() : Instant.now(),
+                true,
                 canInteract,
                 canFilter,
                 canDownload,
