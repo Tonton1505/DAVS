@@ -84,7 +84,7 @@ public enum ErrorCode {
     ERR_PRJ_04(
             "ERR-PRJ-04",
             HttpStatus.BAD_REQUEST,
-            "Chỉ hỗ trợ tệp .twb hoặc .twbx."),
+            "Định dạng tệp không được hỗ trợ (.twb, .twbx, .pdf, .xlsx, .xls, .docx, .pptx, .csv, .json, .xml, .zip, ảnh)."),
     ERR_PRJ_05(
             "ERR-PRJ-05",
             HttpStatus.PAYLOAD_TOO_LARGE,
