@@ -118,52 +118,12 @@ public class SystemSeedServiceImpl implements SystemSeedService {
                     must_change_password = FALSE
                 WHERE lower(email) = 'admin@davs.local' AND deleted_at IS NULL
                 """);
-        String demoPasswordHash = passwordEncoder.encode("Admin@123456!ChangeMe");
-        seedDemoAccount("creator@davs.local", "Demo Creator", "CREATOR", demoPasswordHash);
-        seedDemoAccount("explorer@davs.local", "Demo Explorer", "EXPLORER", demoPasswordHash);
-        seedDemoAccount("viewer@davs.local", "Demo Viewer", "VIEWER", demoPasswordHash);
-    }
-
-
-    private void seedDemoAccount(String email, String fullName, String siteRole, String passwordHash) {
-        jdbcTemplate.update("DELETE FROM login_attempts WHERE lower(email) = lower(?)", email);
-        Integer existing = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM users WHERE lower(email) = lower(?) AND deleted_at IS NULL",
-                Integer.class,
-                email);
-        if (existing != null && existing > 0) {
-            jdbcTemplate.update("""
-                    UPDATE users
-                    SET password_hash = ?,
-                        status = 'ACTIVE',
-                        terms_accepted_at = COALESCE(terms_accepted_at, now()),
-                        updated_at = now()
-                    WHERE lower(email) = lower(?) AND deleted_at IS NULL
-                    """, passwordHash, email);
-            return;
-        }
-        UUID userId = jdbcTemplate.queryForObject("""
-                INSERT INTO users (
-                    email, password_hash, full_name, auth_method,
-                    site_role, status, must_change_password, terms_accepted_at
-                )
-                VALUES (?, ?, ?, 'LOCAL', ?, 'ACTIVE', FALSE, now())
-                RETURNING id
-                """, UUID.class, email, passwordHash, fullName, siteRole);
-        if (userId != null) {
-            jdbcTemplate.update("""
-                    INSERT INTO group_members (group_id, user_id)
-                    SELECT g.id, ?
-                    FROM groups g
-                    WHERE lower(g.name) = lower(?)
-                    ON CONFLICT (group_id, user_id) DO NOTHING
-                    """, userId, ALL_USERS_GROUP);
-            jdbcTemplate.update("""
-                    UPDATE license_pools
-                    SET used = LEAST(total, used + 1), updated_at = now()
-                    WHERE role = ?
-                    """, siteRole);
-            log.info("Seeded demo {} account for email={}", siteRole, email);
-        }
+        jdbcTemplate.update("""
+                UPDATE users
+                SET deleted_at = COALESCE(deleted_at, now()),
+                    updated_at = now()
+                WHERE lower(email) IN ('creator@davs.local', 'explorer@davs.local', 'viewer@davs.local')
+                  AND deleted_at IS NULL
+                """);
     }
 }

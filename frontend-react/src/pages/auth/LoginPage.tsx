@@ -9,7 +9,6 @@ import {
   authApi,
   mapSiteRoleToUiRole,
   type AuthTokenResponse,
-  type SsoConfigResponse,
 } from "../../services/auth.service";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -31,7 +30,6 @@ export default function LoginPage() {
   const [accepted, setAccepted] = useState(false);
   const [pendingMfaToken, setPendingMfaToken] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
-  const [ssoConfig, setSsoConfig] = useState<SsoConfigResponse | null>(null);
 
   const finishLogin = (authResponse: AuthTokenResponse) => {
     const uiRole = mapSiteRoleToUiRole(authResponse.user.siteRole);
@@ -60,19 +58,8 @@ export default function LoginPage() {
   };
 
   useEffect(() => {
-    let mounted = true;
     // Pre-warm Render backend on login page load so cold-starts finish faster
     fetch("/actuator/health").catch(() => {});
-    Promise.resolve(authApi.getSsoConfig?.())
-      .then((cfg) => {
-        if (mounted && cfg) setSsoConfig(cfg);
-      })
-      .catch(() => {
-        // Ignore if SSO config endpoint is unavailable in isolated unit tests
-      });
-    return () => {
-      mounted = false;
-    };
   }, []);
 
   useEffect(() => {
@@ -202,19 +189,6 @@ export default function LoginPage() {
       const apiError = extractApiError(err);
       setError(apiError?.message || "Mã xác thực MFA không đúng.");
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleOidcLogin = async () => {
-    setError("");
-    setLoading(true);
-    try {
-      const { authorizationUrl } = await authApi.getOidcAuthorizeUrl();
-      window.location.assign(authorizationUrl);
-    } catch (err) {
-      const apiError = extractApiError(err);
-      setError(apiError?.message || "Không thể khởi tạo đăng nhập SSO.");
       setLoading(false);
     }
   };
@@ -407,14 +381,6 @@ export default function LoginPage() {
             {loading && <LoaderCircle className="size-4 animate-spin-slow" />}Đăng nhập
           </Button>
         </form>
-        <Button
-          type="button"
-          className="mt-2 w-full"
-          disabled={loading || ssoConfig?.oidcEnabled === false}
-          onClick={handleOidcLogin}
-        >
-          {ssoConfig?.providerName ? `Đăng nhập bằng ${ssoConfig.providerName}` : "Đăng nhập bằng SSO"}
-        </Button>
 
         <div className="mt-6">
           <div className="relative flex items-center py-2">
@@ -426,9 +392,6 @@ export default function LoginPage() {
             {(
               [
                 { label: "Admin", email: import.meta.env.VITE_DEMO_ADMIN_EMAIL || "admin@davs.local" },
-                { label: "Creator", email: "creator@davs.local" },
-                { label: "Explorer", email: "explorer@davs.local" },
-                { label: "Viewer", email: "viewer@davs.local" },
               ] as const
             ).map((demo) => (
               <button
