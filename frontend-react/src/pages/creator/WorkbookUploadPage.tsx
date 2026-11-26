@@ -74,7 +74,7 @@ export default function WorkbookUploadPage() {
 
   const executeUpload = async (forceOverwrite = false) => {
     if (!file) {
-      toast("Vui lòng chọn tệp .twb hoặc .twbx", "error");
+      toast("Vui lòng chọn tệp cần tải lên", "error");
       return;
     }
     if (!targetProjectId) {
@@ -170,7 +170,7 @@ export default function WorkbookUploadPage() {
           />
           <div className="mt-3 text-center">
             <div className="font-medium text-ink">
-              {file ? file.name : "Kéo thả hoặc nhấn để chọn tệp .twb / .twbx"}
+              {file ? file.name : "Kéo thả hoặc nhấn để chọn tệp tải lên"}
             </div>
             {file && (
               <div className="mt-1 text-xs text-muted-foreground">
@@ -179,13 +179,13 @@ export default function WorkbookUploadPage() {
             )}
             {!file && (
               <div className="mt-1 text-xs text-muted-foreground">
-                Hỗ trợ định dạng Tableau Workbook (.twb, .twbx). Tối đa 1 GB.
+                Hỗ trợ .twb, .twbx, .pdf, .xlsx, .xls, .docx, .pptx, .csv, .json, .xml, .zip, ảnh (.png, .jpg). Tối đa 1 GB.
               </div>
             )}
           </div>
           <input
             type="file"
-            accept=".twb,.twbx"
+            accept=".twb,.twbx,.pdf,.xlsx,.xls,.docx,.pptx,.csv,.tsv,.txt,.json,.xml,.zip,.png,.jpg,.jpeg,.gif,.parquet,.davs"
             className="hidden"
             disabled={uploading}
             onChange={(e) => handleFileChange(e.target.files?.[0] || null)}

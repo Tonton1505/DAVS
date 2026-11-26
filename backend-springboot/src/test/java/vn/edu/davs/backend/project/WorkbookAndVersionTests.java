@@ -109,9 +109,9 @@ class WorkbookAndVersionTests {
     void uc08UploadWorkbookValidatesFormatPermissionDuplicateAndVirusScan() {
         MockMultipartFile invalidExt = new MockMultipartFile(
                 "file",
-                "report.xlsx",
+                "malware.exe",
                 "application/octet-stream",
-                "<workbook/>".getBytes(StandardCharsets.UTF_8)
+                new byte[] {'M', 'Z', (byte) 0x90, 0x00}
         );
 
         // [5a] Invalid extension -> ERR-PRJ-04

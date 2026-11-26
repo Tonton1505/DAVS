@@ -25,12 +25,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import vn.edu.davs.backend.service.WorkbookService;
+import vn.edu.davs.backend.util.FileUtil;
 import vn.edu.davs.backend.service.AuditService;
 import vn.edu.davs.backend.service.PermissionService;
 import vn.edu.davs.backend.service.ProjectService;
@@ -47,6 +49,12 @@ public class WorkbookServiceImpl implements WorkbookService {
     private static final int MAX_DESCRIPTION_LENGTH = 500;
 
     private static final int MAX_RESTORE_NOTE_LENGTH = 250;
+
+    private static final Set<String> SUPPORTED_EXTENSIONS = Set.of(
+            "twb", "twbx", "pdf", "xlsx", "xls", "docx", "pptx",
+            "csv", "tsv", "txt", "json", "xml", "zip",
+            "png", "jpg", "jpeg", "gif", "parquet", "davs"
+    );
 
 
     private final IWorkbookDao workbookRepository;
@@ -88,8 +96,8 @@ public class WorkbookServiceImpl implements WorkbookService {
             throw new DavsException(ErrorCode.ERR_PRJ_04);
         }
         String originalFilename = file.getOriginalFilename() != null ? file.getOriginalFilename().trim() : "";
-        String lowerFilename = originalFilename.toLowerCase(Locale.ROOT);
-        if (!lowerFilename.endsWith(".twb") && !lowerFilename.endsWith(".twbx")) {
+        String ext = FileUtil.getFileExtension(originalFilename);
+        if (!SUPPORTED_EXTENSIONS.contains(ext)) {
             throw new DavsException(ErrorCode.ERR_PRJ_04);
         }
 
