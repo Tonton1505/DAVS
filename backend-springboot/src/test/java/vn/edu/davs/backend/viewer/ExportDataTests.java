@@ -112,4 +112,38 @@ class ExportDataTests {
         String text = new String(res.data(), StandardCharsets.UTF_8);
         assertThat(text).contains("Tháng,Doanh số (triệu VND),Khu vực");
     }
+
+    @Test
+    void exportExcelPdfAndPngReturnValidBinaryFormatsForViewers() {
+        DashboardDto dto = new DashboardDto(
+                dashboardId, UUID.randomUUID(), "Doanh số Q4", "", "{}", UUID.randomUUID(), Instant.now(), Instant.now()
+        );
+        when(dashboardRepository.findById(dashboardId)).thenReturn(Optional.of(dto));
+        when(permissionService.can(eq(viewer), eq(Capability.DOWNLOAD), any(ResourceRef.class))).thenReturn(true);
+
+        ExportService.ExportResult xlsx = exportService.export(
+                new ExportRequest(dashboardId, null, "EXCEL", "view", null, null, Map.of()),
+                viewer
+        );
+        assertThat(xlsx.filename()).endsWith(".xlsx");
+        assertThat(xlsx.data()[0]).isEqualTo((byte) 'P');
+        assertThat(xlsx.data()[1]).isEqualTo((byte) 'K');
+
+        ExportService.ExportResult pdf = exportService.export(
+                new ExportRequest(dashboardId, null, "PDF", "view", "Ngang", "A4", Map.of()),
+                viewer
+        );
+        String pdfText = new String(pdf.data(), StandardCharsets.US_ASCII);
+        assertThat(pdfText).startsWith("%PDF-1.4");
+        assertThat(pdfText).contains("xref");
+        assertThat(pdfText.trim()).endsWith("%%EOF");
+
+        ExportService.ExportResult png = exportService.export(
+                new ExportRequest(dashboardId, null, "PNG", "view", null, null, Map.of()),
+                viewer
+        );
+        assertThat(png.data().length).isGreaterThan(32);
+        assertThat(png.data()[0]).isEqualTo((byte) 0x89);
+        assertThat(png.data()[1]).isEqualTo((byte) 0x50);
+    }
 }

@@ -28,6 +28,7 @@ import vn.edu.davs.backend.service.ExportService;
 import vn.edu.davs.backend.service.AuditService;
 import vn.edu.davs.backend.service.PermissionService;
 import vn.edu.davs.backend.service.RowFilterProvider;
+import vn.edu.davs.backend.util.BinaryExportBuilder;
 
 @Slf4j
 @Service
@@ -36,6 +37,12 @@ public class ExportServiceImpl implements ExportService {
 
     private static final UUID DEFAULT_SAMPLE_DATASOURCE_ID =
             UUID.fromString("00000000-0000-0000-0000-000000000101");
+
+    private static final List<String> EXPORT_HEADERS =
+            List.of("Tháng", "Doanh số (triệu VND)", "Khu vực");
+
+    private static final List<String> EXPORT_KEYS =
+            List.of("month", "value", "Vung");
 
 
     private final IDashboardDao dashboardRepository;
@@ -99,24 +106,25 @@ public class ExportServiceImpl implements ExportService {
             throw new DavsException(ErrorCode.ERR_EXP_01, "Dữ liệu xuất vượt giới hạn tối đa 500.000 dòng");
         }
 
+        List<Map<String, Object>> rows = buildExportRows(actor);
         byte[] payload;
         MediaType mediaType;
         String extension;
 
         if ("CSV".equals(fmt)) {
-            payload = generateCsvData(dashboard.name(), actor);
+            payload = generateCsvData(dashboard.name(), rows);
             mediaType = new MediaType("text", "csv", StandardCharsets.UTF_8);
             extension = "csv";
         } else if ("XLSX".equals(fmt) || "EXCEL".equals(fmt)) {
-            payload = generateCsvData(dashboard.name(), actor); // lightweight crosstab payload
+            payload = BinaryExportBuilder.buildXlsx(dashboard.name(), EXPORT_HEADERS, rows, EXPORT_KEYS);
             mediaType = MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             extension = "xlsx";
         } else if ("PDF".equals(fmt)) {
-            payload = ("%PDF-1.4\n% DAVS Dashboard Export: " + dashboard.name()).getBytes(StandardCharsets.UTF_8);
+            payload = BinaryExportBuilder.buildPdf(dashboard.name(), EXPORT_HEADERS, rows, EXPORT_KEYS);
             mediaType = MediaType.APPLICATION_PDF;
             extension = "pdf";
         } else if ("PNG".equals(fmt)) {
-            payload = new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
+            payload = BinaryExportBuilder.buildPng(dashboard.name(), rows);
             mediaType = MediaType.IMAGE_PNG;
             extension = "png";
         } else {
@@ -134,7 +142,7 @@ public class ExportServiceImpl implements ExportService {
     }
 
 
-    private byte[] generateCsvData(String title, DavsUser actor) {
+    private List<Map<String, Object>> buildExportRows(DavsUser actor) {
         String[] months = {"T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"};
         int[] vals = {82, 96, 105, 118, 126, 138, 148, 156, 172, 188, 205, 240};
         String[] regions = {
@@ -153,7 +161,11 @@ public class ExportServiceImpl implements ExportService {
         if (rowFilterProvider != null) {
             rows = rowFilterProvider.applyRowFilters(DEFAULT_SAMPLE_DATASOURCE_ID, actor, rows);
         }
+        return rows;
+    }
 
+
+    private byte[] generateCsvData(String title, List<Map<String, Object>> rows) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         // UTF-8 BOM
         baos.write(0xEF);
