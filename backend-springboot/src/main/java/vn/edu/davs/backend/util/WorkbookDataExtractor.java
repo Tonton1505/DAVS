@@ -29,6 +29,8 @@ public final class WorkbookDataExtractor {
     private static final int MAX_PARSED_ROWS = 500;
     private static final int MAX_SAMPLE_ROWS = 20;
     private static final int MAX_CHART_ITEMS = 12;
+    private static final int MAX_SHARED_STRINGS = 20_000;
+    private static final int MAX_JSON_PARSE_BYTES = 5 * 1024 * 1024;
 
     private WorkbookDataExtractor() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
@@ -235,6 +237,9 @@ public final class WorkbookDataExtractor {
     }
 
     private static TabularData parseJsonArray(byte[] bytes, ObjectMapper mapper) throws Exception {
+        if (bytes.length > MAX_JSON_PARSE_BYTES) {
+            return null;
+        }
         JsonNode root = mapper.readTree(bytes);
         if (!root.isArray() || root.isEmpty()) {
             return null;
@@ -260,54 +265,58 @@ public final class WorkbookDataExtractor {
     }
 
     private static TabularData parseXlsx(byte[] bytes) throws Exception {
-        byte[] sharedStringsBytes = null;
-        byte[] firstSheetBytes = null;
+        List<String> sharedStrings = Collections.emptyList();
         try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(bytes))) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
                 String name = entry.getName().toLowerCase(Locale.ROOT);
                 if ("xl/sharedstrings.xml".equals(name)) {
-                    sharedStringsBytes = zis.readAllBytes();
-                } else if (name.startsWith("xl/worksheets/sheet") && name.endsWith(".xml")
-                        && firstSheetBytes == null) {
-                    firstSheetBytes = zis.readAllBytes();
+                    sharedStrings = parseSharedStrings(zis);
+                    break;
                 }
             }
         }
-        if (firstSheetBytes == null) {
-            return null;
+        try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(bytes))) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                String name = entry.getName().toLowerCase(Locale.ROOT);
+                if (name.startsWith("xl/worksheets/sheet") && name.endsWith(".xml")) {
+                    return parseXlsxSheet(zis, sharedStrings);
+                }
+            }
         }
-        List<String> sharedStrings = sharedStringsBytes != null
-                ? parseSharedStrings(sharedStringsBytes)
-                : Collections.emptyList();
-        return parseXlsxSheet(firstSheetBytes, sharedStrings);
+        return null;
     }
 
-    private static List<String> parseSharedStrings(byte[] bytes) throws Exception {
+    private static List<String> parseSharedStrings(InputStream is) throws Exception {
         List<String> strings = new ArrayList<>();
         XMLInputFactory factory = createSafeXmlFactory();
-        XMLStreamReader reader = factory.createXMLStreamReader(new ByteArrayInputStream(bytes));
+        XMLStreamReader reader = factory.createXMLStreamReader(is);
         StringBuilder current = null;
-        while (reader.hasNext()) {
-            int event = reader.next();
-            if (event == XMLStreamConstants.START_ELEMENT) {
-                String local = reader.getLocalName();
-                if ("si".equals(local)) {
-                    current = new StringBuilder();
-                } else if ("t".equals(local) && current != null) {
-                    current.append(reader.getElementText());
+        try {
+            while (reader.hasNext() && strings.size() < MAX_SHARED_STRINGS) {
+                int event = reader.next();
+                if (event == XMLStreamConstants.START_ELEMENT) {
+                    String local = reader.getLocalName();
+                    if ("si".equals(local)) {
+                        current = new StringBuilder();
+                    } else if ("t".equals(local) && current != null) {
+                        current.append(reader.getElementText());
+                    }
+                } else if (event == XMLStreamConstants.END_ELEMENT && "si".equals(reader.getLocalName())) {
+                    strings.add(current != null ? current.toString() : "");
+                    current = null;
                 }
-            } else if (event == XMLStreamConstants.END_ELEMENT && "si".equals(reader.getLocalName())) {
-                strings.add(current != null ? current.toString() : "");
-                current = null;
             }
+        } finally {
+            reader.close();
         }
         return strings;
     }
 
-    private static TabularData parseXlsxSheet(byte[] bytes, List<String> sharedStrings) throws Exception {
+    private static TabularData parseXlsxSheet(InputStream is, List<String> sharedStrings) throws Exception {
         XMLInputFactory factory = createSafeXmlFactory();
-        XMLStreamReader reader = factory.createXMLStreamReader(new ByteArrayInputStream(bytes));
+        XMLStreamReader reader = factory.createXMLStreamReader(is);
         List<String> columns = new ArrayList<>();
         List<Map<String, Object>> rows = new ArrayList<>();
         List<String> currentRow = null;
@@ -315,52 +324,58 @@ public final class WorkbookDataExtractor {
         int currentColIdx = -1;
         int totalRows = 0;
 
-        while (reader.hasNext()) {
-            int event = reader.next();
-            if (event == XMLStreamConstants.START_ELEMENT) {
-                String local = reader.getLocalName();
-                if ("row".equals(local)) {
-                    currentRow = new ArrayList<>();
-                    currentColIdx = -1;
-                } else if ("c".equals(local) && currentRow != null) {
-                    currentType = reader.getAttributeValue(null, "t");
-                    String ref = reader.getAttributeValue(null, "r");
-                    int targetIdx = ref != null ? columnIndexFromRef(ref) : currentColIdx + 1;
-                    while (currentRow.size() <= targetIdx) {
-                        currentRow.add("");
-                    }
-                    currentColIdx = targetIdx;
-                } else if ("v".equals(local) && currentRow != null && currentColIdx >= 0) {
-                    String rawVal = reader.getElementText();
-                    if ("s".equals(currentType)) {
-                        int idx = Integer.parseInt(rawVal);
-                        rawVal = idx >= 0 && idx < sharedStrings.size() ? sharedStrings.get(idx) : "";
-                    }
-                    currentRow.set(currentColIdx, rawVal);
-                } else if ("is".equals(local) && currentRow != null && currentColIdx >= 0) {
-                    String inlineVal = readInlineString(reader);
-                    currentRow.set(currentColIdx, inlineVal);
-                }
-            } else if (event == XMLStreamConstants.END_ELEMENT && "row".equals(reader.getLocalName())) {
-                if (currentRow != null && !currentRow.isEmpty()) {
-                    if (columns.isEmpty()) {
-                        for (int i = 0; i < currentRow.size(); i++) {
-                            String h = currentRow.get(i).trim();
-                            columns.add(h.isEmpty() ? "Col_" + (i + 1) : h);
+        try {
+            while (reader.hasNext()) {
+                int event = reader.next();
+                if (event == XMLStreamConstants.START_ELEMENT) {
+                    String local = reader.getLocalName();
+                    if ("row".equals(local)) {
+                        currentRow = new ArrayList<>();
+                        currentColIdx = -1;
+                    } else if ("c".equals(local) && currentRow != null) {
+                        currentType = reader.getAttributeValue(null, "t");
+                        String ref = reader.getAttributeValue(null, "r");
+                        int targetIdx = ref != null ? columnIndexFromRef(ref) : currentColIdx + 1;
+                        while (currentRow.size() <= targetIdx) {
+                            currentRow.add("");
                         }
-                    } else {
-                        totalRows++;
-                        if (rows.size() < MAX_PARSED_ROWS) {
-                            Map<String, Object> map = new LinkedHashMap<>();
-                            for (int i = 0; i < columns.size(); i++) {
-                                map.put(columns.get(i), i < currentRow.size() ? currentRow.get(i) : "");
+                        currentColIdx = targetIdx;
+                    } else if ("v".equals(local) && currentRow != null && currentColIdx >= 0) {
+                        String rawVal = reader.getElementText();
+                        if ("s".equals(currentType)) {
+                            int idx = Integer.parseInt(rawVal);
+                            rawVal = idx >= 0 && idx < sharedStrings.size() ? sharedStrings.get(idx) : "";
+                        }
+                        currentRow.set(currentColIdx, rawVal);
+                    } else if ("is".equals(local) && currentRow != null && currentColIdx >= 0) {
+                        String inlineVal = readInlineString(reader);
+                        currentRow.set(currentColIdx, inlineVal);
+                    }
+                } else if (event == XMLStreamConstants.END_ELEMENT && "row".equals(reader.getLocalName())) {
+                    if (currentRow != null && !currentRow.isEmpty()) {
+                        if (columns.isEmpty()) {
+                            for (int i = 0; i < currentRow.size(); i++) {
+                                String h = currentRow.get(i).trim();
+                                columns.add(h.isEmpty() ? "Col_" + (i + 1) : h);
                             }
-                            rows.add(map);
+                        } else {
+                            totalRows++;
+                            if (rows.size() < MAX_PARSED_ROWS) {
+                                Map<String, Object> map = new LinkedHashMap<>();
+                                for (int i = 0; i < columns.size(); i++) {
+                                    map.put(columns.get(i), i < currentRow.size() ? currentRow.get(i) : "");
+                                }
+                                rows.add(map);
+                            } else {
+                                break;
+                            }
                         }
                     }
+                    currentRow = null;
                 }
-                currentRow = null;
             }
+        } finally {
+            reader.close();
         }
         return new TabularData(columns, rows, totalRows);
     }
@@ -396,7 +411,7 @@ public final class WorkbookDataExtractor {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
                 if (entry.getName().toLowerCase(Locale.ROOT).endsWith(".twb")) {
-                    return parseTwbXml(new ByteArrayInputStream(zis.readAllBytes()));
+                    return parseTwbXml(zis);
                 }
             }
         }
