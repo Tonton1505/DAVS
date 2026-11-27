@@ -173,10 +173,11 @@ export default function DashboardViewPage() {
   const currentFilters = useMemo(() => ({ region }), [region]);
   const currentParameters = useMemo(() => ({ top }), [top]);
 
+  const rawDef = dashboardView?.definition;
   const parsedDef = useMemo(() => {
-    if (!dashboardView?.definition) return null;
+    if (!rawDef) return null;
     try {
-      const obj = JSON.parse(dashboardView.definition) as {
+      const obj = JSON.parse(rawDef) as {
         fileName?: string;
         extension?: string;
         sizeBytes?: number;
@@ -197,20 +198,21 @@ export default function DashboardViewPage() {
     } catch {
       return null;
     }
-  }, [dashboardView?.definition]);
+  }, [rawDef]);
 
   const isCustomWorkbook = Boolean(parsedDef);
+  const wbDisplayName = dashboardView?.workbookName;
   const bannerSubtitle = useMemo(() => {
     if (!parsedDef) return "Công ty ABC · Đơn vị: triệu đồng";
     if (parsedDef.previewType === "TABULAR") {
-      return `${parsedDef.fileName || dashboardView?.workbookName || "Dữ liệu"} · ${parsedDef.totalRows ?? 0} dòng · ${parsedDef.columns?.length ?? 0} cột`;
+      return `${parsedDef.fileName || wbDisplayName || "Dữ liệu"} · ${parsedDef.totalRows ?? 0} dòng · ${parsedDef.columns?.length ?? 0} cột`;
     }
     if (parsedDef.previewType === "TABLEAU") {
       return `${parsedDef.fileName || "Workbook"} · Tableau (${parsedDef.sheets?.length ?? 0} sheet, ${parsedDef.dashboards?.length ?? 0} dashboard)`;
     }
     const mb = parsedDef.sizeBytes != null ? ` · ${(parsedDef.sizeBytes / (1024 * 1024)).toFixed(2)} MB` : "";
-    return `${parsedDef.fileName || dashboardView?.workbookName || "Tệp tải lên"}${mb}`;
-  }, [parsedDef, dashboardView?.workbookName]);
+    return `${parsedDef.fileName || wbDisplayName || "Tệp tải lên"}${mb}`;
+  }, [parsedDef, wbDisplayName]);
 
   const content = (
     <>
