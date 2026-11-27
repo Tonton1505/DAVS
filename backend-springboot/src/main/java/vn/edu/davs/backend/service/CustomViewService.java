@@ -38,6 +38,13 @@ public class CustomViewService {
 
     @Transactional
     public CustomViewDto create(CreateCustomViewRequest request, DavsUser actor) {
+        if (request.dashboardId() == null) {
+            throw new DavsException(ErrorCode.ERR_PRJ_02, "dashboardId không được để trống");
+        }
+        String trimmedName = request.name() != null ? request.name().trim() : "";
+        if (trimmedName.isEmpty() || trimmedName.length() > 255) {
+            throw new DavsException(ErrorCode.ERR_PRJ_02, "Tên view từ 1 đến 255 ký tự");
+        }
         dashboardRepository.findById(request.dashboardId())
                 .orElseThrow(() -> new DavsException(ErrorCode.ERR_PRJ_03, "Không tìm thấy dashboard"));
 
@@ -48,7 +55,7 @@ public class CustomViewService {
 
         CustomViewDto created = customViewRepository.create(
                 request.dashboardId(),
-                request.name(),
+                trimmedName,
                 filtersJson,
                 paramsJson,
                 isDefault,

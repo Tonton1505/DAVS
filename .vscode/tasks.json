@@ -2,12 +2,22 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Cài đặt thư viện Frontend (Tự động kiểm tra)",
+      "type": "shell",
+      "command": "node",
+      "args": ["scripts/run-frontend.mjs", "ensure-deps"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Chạy Frontend (Vite - Cổng 5173)",
       "type": "shell",
-      "command": "npm.cmd",
-      "args": ["run", "dev"],
+      "command": "node",
+      "args": ["scripts/run-frontend.mjs", "dev"],
       "options": {
-        "cwd": "${workspaceFolder}/frontend-react"
+        "cwd": "${workspaceFolder}"
       },
       "isBackground": true,
       "group": {
@@ -30,10 +40,10 @@
     {
       "label": "Kiểm thử Frontend (Vitest)",
       "type": "shell",
-      "command": "npm.cmd",
-      "args": ["test", "--", "--run"],
+      "command": "node",
+      "args": ["scripts/run-frontend.mjs", "test", "--", "--run"],
       "options": {
-        "cwd": "${workspaceFolder}/frontend-react"
+        "cwd": "${workspaceFolder}"
       },
       "group": "test",
       "problemMatcher": []

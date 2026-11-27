@@ -14,6 +14,7 @@ import vn.edu.davs.backend.model.DavsUser;
 import vn.edu.davs.backend.service.DashboardActionService;
 import vn.edu.davs.backend.service.DashboardService;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -97,6 +98,14 @@ public class DashboardController {
     // =========================================================================
     // UC19: Dashboard Viewer, Metadata & Interactive Query APIs
     // =========================================================================
+
+    @Operation(summary = "List active dashboards for home workspace")
+    @GetMapping({"/api/v1/dashboards", "/api/dashboards"})
+    public ResponseEntity<List<Map<String, Object>>> listHomeDashboards(
+            @AuthenticationPrincipal DavsUser actor
+    ) {
+        return ResponseEntity.ok(dashboardService.listHomeDashboards(actor));
+    }
 
     @Operation(summary = "Get dashboard details")
     @GetMapping("/api/v1/dashboards/{id}")

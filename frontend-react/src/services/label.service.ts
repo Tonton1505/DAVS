@@ -1,4 +1,5 @@
-import client from "../lib/axios/client";
+import client, { isOfflineOrMockError } from "../lib/axios/client";
+import { offlineDemoStore } from "./offline-demo.store";
 
 export interface LabelCategoryDto {
   id: string;
@@ -29,8 +30,13 @@ export interface LabelTargetRef {
 
 export const labelService = {
   async listCategories(): Promise<LabelCategoryDto[]> {
-    const response = await client.get<LabelCategoryDto[]>("/v1/label-categories");
-    return response.data;
+    try {
+      const response = await client.get<LabelCategoryDto[]>("/v1/label-categories");
+      return response.data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) return offlineDemoStore.listCategories();
+      throw err;
+    }
   },
 
   async createCategory(payload: {
@@ -38,8 +44,13 @@ export const labelService = {
     description?: string;
     isWarning?: boolean;
   }): Promise<LabelCategoryDto> {
-    const response = await client.post<LabelCategoryDto>("/v1/label-categories", payload);
-    return response.data;
+    try {
+      const response = await client.post<LabelCategoryDto>("/v1/label-categories", payload);
+      return response.data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) return offlineDemoStore.createCategory(payload);
+      throw err;
+    }
   },
 
   async listLabels(params?: { categoryId?: string; q?: string }): Promise<LabelDto[]> {
@@ -50,8 +61,13 @@ export const labelService = {
     if (params?.q && params.q.trim()) {
       queryParams.q = params.q.trim();
     }
-    const response = await client.get<LabelDto[]>("/v1/labels", { params: queryParams });
-    return response.data;
+    try {
+      const response = await client.get<LabelDto[]>("/v1/labels", { params: queryParams });
+      return response.data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) return offlineDemoStore.listLabels(params);
+      throw err;
+    }
   },
 
   async createLabel(payload: {
@@ -60,8 +76,13 @@ export const labelService = {
     description?: string;
     isWarning?: boolean;
   }): Promise<LabelDto> {
-    const response = await client.post<LabelDto>("/v1/labels", payload);
-    return response.data;
+    try {
+      const response = await client.post<LabelDto>("/v1/labels", payload);
+      return response.data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) return offlineDemoStore.createLabel(payload);
+      throw err;
+    }
   },
 
   async updateLabel(
@@ -72,31 +93,56 @@ export const labelService = {
       isWarning?: boolean;
     },
   ): Promise<LabelDto> {
-    const response = await client.patch<LabelDto>(`/v1/labels/${id}`, payload);
-    return response.data;
+    try {
+      const response = await client.patch<LabelDto>(`/v1/labels/${id}`, payload);
+      return response.data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) return offlineDemoStore.updateLabel(id, payload);
+      throw err;
+    }
   },
 
   async deleteLabel(id: string): Promise<{ deletedId: string; unassignedCount: number }> {
-    const response = await client.delete<{ deletedId: string; unassignedCount: number }>(
-      `/v1/labels/${id}`,
-    );
-    return response.data;
+    try {
+      const response = await client.delete<{ deletedId: string; unassignedCount: number }>(
+        `/v1/labels/${id}`,
+      );
+      return response.data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) return offlineDemoStore.deleteLabel(id);
+      throw err;
+    }
   },
 
   async assignLabel(labelId: string, targets: LabelTargetRef[]): Promise<LabelDto> {
-    const response = await client.post<LabelDto>(`/v1/labels/${labelId}/assign`, { targets });
-    return response.data;
+    try {
+      const response = await client.post<LabelDto>(`/v1/labels/${labelId}/assign`, { targets });
+      return response.data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) return offlineDemoStore.assignLabel(labelId, targets);
+      throw err;
+    }
   },
 
   async unassignLabel(labelId: string, targets: LabelTargetRef[]): Promise<LabelDto> {
-    const response = await client.post<LabelDto>(`/v1/labels/${labelId}/unassign`, { targets });
-    return response.data;
+    try {
+      const response = await client.post<LabelDto>(`/v1/labels/${labelId}/unassign`, { targets });
+      return response.data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) return offlineDemoStore.unassignLabel(labelId, targets);
+      throw err;
+    }
   },
 
   async listLabelsForTarget(type: string, id: string): Promise<LabelDto[]> {
-    const response = await client.get<LabelDto[]>("/v1/labels/targets", {
-      params: { type, id },
-    });
-    return response.data;
+    try {
+      const response = await client.get<LabelDto[]>("/v1/labels/targets", {
+        params: { type, id },
+      });
+      return response.data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) return offlineDemoStore.listLabelsForTarget(type, id);
+      throw err;
+    }
   },
 };

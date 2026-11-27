@@ -1,7 +1,7 @@
-import client from "../lib/axios/client";
-import { API } from "../common/constants/api-endpoints";
+import client, { isOfflineOrMockError } from "../lib/axios/client";
 import type { DashboardItem } from "../common/constants/types";
 import type { LabelDto } from "./label.service";
+import { offlineDemoStore } from "./offline-demo.store";
 
 export interface WorkbookDto {
   id: string;
@@ -46,7 +46,14 @@ export interface UploadWorkbookInput {
 }
 
 export const workbookService = {
-  list: async () => (await client.get<DashboardItem[]>(API.dashboards)).data,
+  async list(): Promise<DashboardItem[]> {
+    try {
+      return (await client.get<DashboardItem[]>("/v1/dashboards")).data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) return offlineDemoStore.listDashboardItems();
+      throw err;
+    }
+  },
 
   async upload(input: UploadWorkbookInput): Promise<WorkbookDto> {
     const formData = new FormData();
@@ -62,35 +69,55 @@ export const workbookService = {
     }
     formData.append("file", input.file);
 
-    const response = await client.post<WorkbookDto>(
-      `/v1/projects/${input.projectId}/workbooks/upload`,
-      formData,
-      {
-        headers: { "Content-Type": "multipart/form-data" },
-        onUploadProgress: (event) => {
-          if (input.onProgress && event.total && event.total > 0) {
-            const pct = Math.min(100, Math.round((event.loaded * 100) / event.total));
-            input.onProgress(pct);
-          }
+    try {
+      const response = await client.post<WorkbookDto>(
+        `/v1/projects/${input.projectId}/workbooks/upload`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: (event) => {
+            if (input.onProgress && event.total && event.total > 0) {
+              const pct = Math.min(100, Math.round((event.loaded * 100) / event.total));
+              input.onProgress(pct);
+            }
+          },
         },
-      },
-    );
-    return response.data;
+      );
+      return response.data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) return offlineDemoStore.uploadWorkbook(input);
+      throw err;
+    }
   },
 
   async getById(id: string): Promise<WorkbookDto> {
-    const response = await client.get<WorkbookDto>(`/v1/workbooks/${id}`);
-    return response.data;
+    try {
+      const response = await client.get<WorkbookDto>(`/v1/workbooks/${id}`);
+      return response.data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) return offlineDemoStore.getWorkbookById(id);
+      throw err;
+    }
   },
 
   async listByProject(projectId: string): Promise<WorkbookDto[]> {
-    const response = await client.get<WorkbookDto[]>(`/v1/projects/${projectId}/workbooks`);
-    return response.data;
+    try {
+      const response = await client.get<WorkbookDto[]>(`/v1/projects/${projectId}/workbooks`);
+      return response.data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) return offlineDemoStore.listWorkbooksByProject(projectId);
+      throw err;
+    }
   },
 
   async listVersions(workbookId: string): Promise<WorkbookVersionDto[]> {
-    const response = await client.get<WorkbookVersionDto[]>(`/v1/workbooks/${workbookId}/versions`);
-    return response.data;
+    try {
+      const response = await client.get<WorkbookVersionDto[]>(`/v1/workbooks/${workbookId}/versions`);
+      return response.data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) return offlineDemoStore.listVersions(workbookId);
+      throw err;
+    }
   },
 
   async restoreVersion(
@@ -98,22 +125,44 @@ export const workbookService = {
     versionNumber: number,
     note: string,
   ): Promise<WorkbookVersionDto> {
-    const response = await client.post<WorkbookVersionDto>(
-      `/v1/workbooks/${workbookId}/versions/${versionNumber}/restore`,
-      { note },
-    );
-    return response.data;
+    try {
+      const response = await client.post<WorkbookVersionDto>(
+        `/v1/workbooks/${workbookId}/versions/${versionNumber}/restore`,
+        { note },
+      );
+      return response.data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) {
+        return offlineDemoStore.restoreVersion(workbookId, versionNumber, note);
+      }
+      throw err;
+    }
   },
 
   async downloadVersion(workbookId: string, versionNumber: number): Promise<Blob> {
-    const response = await client.get<Blob>(
-      `/v1/workbooks/${workbookId}/versions/${versionNumber}/download`,
-      { responseType: "blob" },
-    );
-    return response.data;
+    try {
+      const response = await client.get<Blob>(
+        `/v1/workbooks/${workbookId}/versions/${versionNumber}/download`,
+        { responseType: "blob" },
+      );
+      return response.data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) {
+        return offlineDemoStore.downloadVersion(workbookId, versionNumber);
+      }
+      throw err;
+    }
   },
 
   async deleteVersion(workbookId: string, versionNumber: number): Promise<void> {
-    await client.delete(`/v1/workbooks/${workbookId}/versions/${versionNumber}`);
+    try {
+      await client.delete(`/v1/workbooks/${workbookId}/versions/${versionNumber}`);
+    } catch (err) {
+      if (isOfflineOrMockError(err)) {
+        offlineDemoStore.deleteVersion(workbookId, versionNumber);
+        return;
+      }
+      throw err;
+    }
   },
 };

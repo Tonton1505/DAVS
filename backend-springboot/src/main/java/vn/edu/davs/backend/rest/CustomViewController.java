@@ -45,12 +45,23 @@ public class CustomViewController {
     }
 
     @Operation(summary = "Create custom view")
-    @PostMapping("/custom-views")
+    @PostMapping({"/custom-views", "/dashboards/{dashboardId}/custom-views"})
     public ResponseEntity<CustomViewDto> createCustomView(
-            @Valid @RequestBody CreateCustomViewRequest request,
+            @PathVariable(required = false) UUID dashboardId,
+            @RequestBody CreateCustomViewRequest request,
             @AuthenticationPrincipal DavsUser actor
     ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(customViewService.create(request, actor));
+        CreateCustomViewRequest effective = request.dashboardId() != null || dashboardId == null
+                ? request
+                : new CreateCustomViewRequest(
+                        dashboardId,
+                        request.name(),
+                        request.filters(),
+                        request.parameters(),
+                        request.isDefault(),
+                        request.isShared()
+                );
+        return ResponseEntity.status(HttpStatus.CREATED).body(customViewService.create(effective, actor));
     }
 
     @Operation(summary = "Set custom view as default for author")

@@ -1,5 +1,6 @@
 package vn.edu.davs.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.util.Map;
@@ -16,10 +17,13 @@ public record ExportRequest(
 
         String scope,
 
+        @JsonAlias({"paperOrientation"})
         String orientation,
 
+        @JsonAlias({"paperSize"})
         String pageSize,
 
+        @JsonAlias({"customParameters"})
         Map<String, Object> filters
 ) {
 }

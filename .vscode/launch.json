@@ -5,6 +5,7 @@
       "type": "node",
       "request": "launch",
       "name": "Chạy DAVS Frontend (F5 - Tự mở trình duyệt)",
+      "preLaunchTask": "Cài đặt thư viện Frontend (Tự động kiểm tra)",
       "program": "${workspaceFolder}/frontend-react/node_modules/vite/bin/vite.js",
       "args": ["--open"],
       "cwd": "${workspaceFolder}/frontend-react",
@@ -17,13 +18,8 @@
       "request": "launch",
       "mainClass": "vn.edu.davs.backend.BackendSpringbootApplication",
       "projectName": "backend-springboot",
-      "cwd": "${workspaceFolder}/backend-springboot"
-    },
-    {
-      "type": "jdk",
-      "name": "Oracle Java - BackendSpringbootApplication",
-      "request": "launch",
-      "mainClass": "vn.edu.davs.backend.BackendSpringbootApplication"
+      "cwd": "${workspaceFolder}/backend-springboot",
+      "vmArgs": "-Djava.awt.headless=true"
     },
     {
       "type": "chrome",

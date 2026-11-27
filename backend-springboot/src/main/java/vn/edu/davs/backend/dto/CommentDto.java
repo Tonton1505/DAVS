@@ -1,5 +1,6 @@
 package vn.edu.davs.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -21,4 +22,14 @@ public record CommentDto(
         Instant updatedAt,
         List<CommentDto> replies
 ) {
+
+    @JsonProperty("canEdit")
+    public boolean canEdit() {
+        return editable;
+    }
+
+    @JsonProperty("canDelete")
+    public boolean canDelete() {
+        return deletable;
+    }
 }

@@ -1,4 +1,5 @@
-import client from "../lib/axios/client";
+import client, { isOfflineOrMockError } from "../lib/axios/client";
+import { offlineDemoStore } from "./offline-demo.store";
 import { API } from "../common/constants/api-endpoints";
 import type { User } from "../common/constants/types";
 import type { BackendSiteRole } from "./auth.service";
@@ -78,8 +79,13 @@ export const userService = {
   },
 
   async listLicenses(): Promise<LicensePoolDto[]> {
-    const { data } = await client.get<LicensePoolDto[]>("/v1/users/licenses");
-    return data;
+    try {
+      const { data } = await client.get<LicensePoolDto[]>("/v1/users/licenses");
+      return data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) return offlineDemoStore.listLicenses();
+      throw err;
+    }
   },
 
   async createUsers(payload: CreateUsersPayload): Promise<CreateUsersResponse> {

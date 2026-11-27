@@ -1,4 +1,5 @@
-import client from "../lib/axios/client";
+import client, { isOfflineOrMockError } from "../lib/axios/client";
+import { offlineDemoStore } from "./offline-demo.store";
 
 export type SubjectType = "USER" | "GROUP";
 export type Effect = "ALLOW" | "DENY";
@@ -80,18 +81,30 @@ export interface PermissionSubjectDto {
 
 export const permissionService = {
   async listTemplates(): Promise<PermissionTemplateDto[]> {
-    const { data } = await client.get<PermissionTemplateDto[]>("/v1/permission-templates");
-    return data;
+    try {
+      const { data } = await client.get<PermissionTemplateDto[]>("/v1/permission-templates");
+      return data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) return offlineDemoStore.listPermissionTemplates();
+      throw err;
+    }
   },
 
   async getPermissions(
     resourceType: ResourceType,
     resourceId: string,
   ): Promise<ResourcePermissionsResponse> {
-    const { data } = await client.get<ResourcePermissionsResponse>(
-      `/v1/resources/${resourceType}/${resourceId}/permissions`,
-    );
-    return data;
+    try {
+      const { data } = await client.get<ResourcePermissionsResponse>(
+        `/v1/resources/${resourceType}/${resourceId}/permissions`,
+      );
+      return data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) {
+        return offlineDemoStore.getResourcePermissions(resourceType, resourceId);
+      }
+      throw err;
+    }
   },
 
   async updatePermissions(
@@ -99,11 +112,18 @@ export const permissionService = {
     resourceId: string,
     rules: RuleInput[],
   ): Promise<UpdateResourcePermissionsResponse> {
-    const { data } = await client.put<UpdateResourcePermissionsResponse>(
-      `/v1/resources/${resourceType}/${resourceId}/permissions`,
-      { rules },
-    );
-    return data;
+    try {
+      const { data } = await client.put<UpdateResourcePermissionsResponse>(
+        `/v1/resources/${resourceType}/${resourceId}/permissions`,
+        { rules },
+      );
+      return data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) {
+        return offlineDemoStore.updateResourcePermissions(resourceType, resourceId, rules);
+      }
+      throw err;
+    }
   },
 
   async getEffective(
@@ -111,20 +131,32 @@ export const permissionService = {
     resourceId: string,
     userId: string,
   ): Promise<EffectivePermissionsResponse> {
-    const { data } = await client.get<EffectivePermissionsResponse>(
-      `/v1/resources/${resourceType}/${resourceId}/permissions/effective`,
-      { params: { userId } },
-    );
-    return data;
+    try {
+      const { data } = await client.get<EffectivePermissionsResponse>(
+        `/v1/resources/${resourceType}/${resourceId}/permissions/effective`,
+        { params: { userId } },
+      );
+      return data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) {
+        return offlineDemoStore.getEffectivePermissions(resourceType, resourceId, userId);
+      }
+      throw err;
+    }
   },
 
   async listSubjects(
     resourceType: ResourceType,
     resourceId: string,
   ): Promise<PermissionSubjectDto[]> {
-    const { data } = await client.get<PermissionSubjectDto[]>(
-      `/v1/resources/${resourceType}/${resourceId}/permissions/subjects`,
-    );
-    return data;
+    try {
+      const { data } = await client.get<PermissionSubjectDto[]>(
+        `/v1/resources/${resourceType}/${resourceId}/permissions/subjects`,
+      );
+      return data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) return offlineDemoStore.listPermissionSubjects();
+      throw err;
+    }
   },
 };

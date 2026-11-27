@@ -17,6 +17,7 @@ import vn.edu.davs.backend.exception.FieldErrorItem;
 import vn.edu.davs.backend.model.DavsUser;
 import vn.edu.davs.backend.model.ResourceRef;
 import vn.edu.davs.backend.model.StoredObject;
+import vn.edu.davs.backend.util.BinaryExportBuilder;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,12 +51,12 @@ public class WorkbookService {
     private final SettingsService settingsService;
     private final AuditService auditService;
 
-    @Transactional
+    @Transactional(noRollbackFor = DavsException.class)
     public WorkbookDto uploadWorkbook(
             UUID projectId,
             String name,
             String description,
-             boolean overwrite,
+            boolean overwrite,
             String note,
             MultipartFile file,
             DavsUser actor
@@ -297,9 +298,9 @@ public class WorkbookService {
         try (InputStream in = storageService.get(Bucket.WORKBOOKS, version.objectKey())) {
             content = in != null
                     ? in.readAllBytes()
-                    : "<workbook/>".getBytes(StandardCharsets.UTF_8);
+                    : fallbackWorkbookBytes(workbook.name(), version.fileName());
         } catch (Exception ex) {
-            content = "<workbook/>".getBytes(StandardCharsets.UTF_8);
+            content = fallbackWorkbookBytes(workbook.name(), version.fileName());
         }
 
         auditService.log(AuditEvent.of(
@@ -465,6 +466,24 @@ public class WorkbookService {
                 StandardCharsets.UTF_8
         ).toLowerCase(Locale.ROOT);
         return sample.contains("missing-datasource") || sample.contains("needs-reconnect");
+    }
+
+    private static byte[] fallbackWorkbookBytes(String workbookName, String fileName) {
+        String title = (workbookName != null && !workbookName.isBlank()) ? workbookName : "Workbook";
+        if (fileName != null && fileName.toLowerCase(Locale.ROOT).endsWith(".csv")) {
+            String csv = "\uFEFFTháng,Doanh số (triệu VND),Khu vực\nT1,120,Miền Bắc\nT2,165,Miền Nam\n";
+            return csv.getBytes(StandardCharsets.UTF_8);
+        }
+        return BinaryExportBuilder.buildXlsx(
+                title,
+                List.of("Tháng", "Doanh số (triệu VND)", "Khu vực"),
+                List.of(
+                        Map.of("month", "T1", "value", 120, "region", "Miền Bắc"),
+                        Map.of("month", "T2", "value", 165, "region", "Miền Nam"),
+                        Map.of("month", "T3", "value", 142, "region", "Miền Trung")
+                ),
+                List.of("month", "value", "region")
+        );
     }
 
     public record DownloadedVersion(String fileName, byte[] content) {

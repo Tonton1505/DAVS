@@ -1,4 +1,5 @@
-import client from "../lib/axios/client";
+import client, { isOfflineOrMockError } from "../lib/axios/client";
+import { offlineDemoStore } from "./offline-demo.store";
 import type { WorkbookDto } from "./workbook.service";
 
 export interface CustomViewDto {
@@ -33,31 +34,73 @@ export interface SaveAsWorkbookRequest {
 
 export const customViewService = {
   list: async (dashboardId: string) => {
-    const res = await client.get<CustomViewDto[]>(`/v1/dashboards/${dashboardId}/custom-views`);
-    return res.data;
+    try {
+      const res = await client.get<CustomViewDto[]>(`/v1/dashboards/${dashboardId}/custom-views`);
+      return res.data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) return offlineDemoStore.listCustomViews(dashboardId);
+      throw err;
+    }
   },
 
   create: async (dashboardId: string, data: CreateCustomViewRequest) => {
-    const res = await client.post<CustomViewDto>(`/v1/dashboards/${dashboardId}/custom-views`, data);
-    return res.data;
+    try {
+      const res = await client.post<CustomViewDto>(
+        `/v1/dashboards/${dashboardId}/custom-views`,
+        data,
+      );
+      return res.data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) return offlineDemoStore.createCustomView(dashboardId, data);
+      throw err;
+    }
   },
 
   setDefault: async (id: string) => {
-    await client.put(`/v1/custom-views/${id}/default`);
+    try {
+      await client.put(`/v1/custom-views/${id}/default`);
+    } catch (err) {
+      if (isOfflineOrMockError(err)) {
+        offlineDemoStore.setDefaultCustomView(id);
+        return;
+      }
+      throw err;
+    }
   },
 
   setShared: async (id: string, shared: boolean) => {
-    await client.put(`/v1/custom-views/${id}/share`, null, {
-      params: { shared },
-    });
+    try {
+      await client.put(`/v1/custom-views/${id}/share`, null, {
+        params: { shared },
+      });
+    } catch (err) {
+      if (isOfflineOrMockError(err)) {
+        offlineDemoStore.setSharedCustomView(id, shared);
+        return;
+      }
+      throw err;
+    }
   },
 
   delete: async (id: string) => {
-    await client.delete(`/v1/custom-views/${id}`);
+    try {
+      await client.delete(`/v1/custom-views/${id}`);
+    } catch (err) {
+      if (isOfflineOrMockError(err)) {
+        offlineDemoStore.deleteCustomView(id);
+        return;
+      }
+      throw err;
+    }
   },
 
   saveAsWorkbook: async (data: SaveAsWorkbookRequest) => {
-    const res = await client.post<WorkbookDto>("/v1/workbooks/save-as", data);
-    return res.data;
+    try {
+      const res = await client.post<WorkbookDto>("/v1/workbooks/save-as", data);
+      return res.data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) return offlineDemoStore.saveAsWorkbook(data);
+      throw err;
+    }
   },
 };

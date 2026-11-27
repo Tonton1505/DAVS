@@ -1,4 +1,6 @@
-import client from "../lib/axios/client";
+import type { AxiosResponse } from "axios";
+import client, { isOfflineOrMockError } from "../lib/axios/client";
+import { offlineDemoStore } from "./offline-demo.store";
 
 export interface ExportLimitsDto {
   maxRows: number;
@@ -18,14 +20,33 @@ export interface ExportRequest {
 
 export const exportService = {
   getLimits: async () => {
-    const res = await client.get<ExportLimitsDto>("/v1/exports/limits");
-    return res.data;
+    try {
+      const res = await client.get<ExportLimitsDto>("/v1/exports/limits");
+      return res.data;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) return offlineDemoStore.getExportLimits();
+      throw err;
+    }
   },
 
   download: async (data: ExportRequest) => {
-    const res = await client.post("/v1/exports", data, {
-      responseType: "blob",
-    });
-    return res;
+    try {
+      const res = await client.post("/v1/exports", data, {
+        responseType: "blob",
+      });
+      return res;
+    } catch (err) {
+      if (isOfflineOrMockError(err)) {
+        const built = offlineDemoStore.buildExportResponse(data);
+        return {
+          data: built.data,
+          status: 200,
+          statusText: "OK",
+          headers: built.headers,
+          config: {} as AxiosResponse["config"],
+        } as AxiosResponse<Blob>;
+      }
+      throw err;
+    }
   },
 };

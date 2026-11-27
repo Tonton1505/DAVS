@@ -16,6 +16,10 @@ public interface DashboardDao {
 
     Optional<DashboardDto> findFirstActive();
 
+    default List<DashboardDto> listAllActive() {
+        return findFirstActive().map(List::of).orElseGet(List::of);
+    }
+
     DashboardDto create(UUID workbookId, String name, String description, String definition, UUID createdBy);
 
     void update(UUID id, String name, String description, String definition);

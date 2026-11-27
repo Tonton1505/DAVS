@@ -1,7 +1,7 @@
 # Set default behavior to automatically normalize line endings to LF
 * text=auto eol=lf
 
-# Explicitly declare text files you want to always have LF line endings on checkout
+# Explicitly declare text files to always have LF line endings on checkout (macOS/Linux safe)
 *.java text eol=lf
 *.sql text eol=lf
 *.xml text eol=lf
@@ -11,10 +11,19 @@
 *.ts text eol=lf
 *.tsx text eol=lf
 *.js text eol=lf
+*.mjs text eol=lf
 *.json text eol=lf
 *.md text eol=lf
 *.html text eol=lf
 *.css text eol=lf
+*.sh text eol=lf
+*.command text eol=lf
+*Dockerfile* text eol=lf
+*.conf text eol=lf
+
+# Windows batch scripts use CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
 
 # Store frontend public images as regular Git blobs so Vercel clones them without Git LFS
 frontend-react/public/*.png -filter -diff -merge

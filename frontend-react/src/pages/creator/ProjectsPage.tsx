@@ -177,7 +177,7 @@ export default function ProjectsPage() {
       .then((data) => {
         setContent(data);
       })
-      .catch((err) => {
+      .catch(() => {
         // Fallback to sample projects/workbooks when backend is offline
         setContent(FALLBACK_CONTENT);
       })
@@ -197,7 +197,7 @@ export default function ProjectsPage() {
       .then((data) => {
         if (!ignore) setContent(data);
       })
-      .catch((err) => {
+      .catch(() => {
         if (!ignore) {
           setContent(FALLBACK_CONTENT);
         }

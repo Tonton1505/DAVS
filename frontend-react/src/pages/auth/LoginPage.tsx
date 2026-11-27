@@ -435,9 +435,13 @@ export default function LoginPage() {
                 disabled={loading}
                 className="rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-muted disabled:opacity-50"
                 onClick={async () => {
+                  const host = window.location.hostname;
                   const isLocal =
-                    window.location.hostname === "localhost" ||
-                    window.location.hostname === "127.0.0.1";
+                    host === "localhost" ||
+                    host === "127.0.0.1" ||
+                    host === "[::1]" ||
+                    host.endsWith(".local") ||
+                    /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host);
                   const devPass =
                     import.meta.env.VITE_DEMO_ADMIN_PASSWORD ||
                     (isLocal ? "Admin@123456!ChangeMe" : "Admin@123456!Prod");

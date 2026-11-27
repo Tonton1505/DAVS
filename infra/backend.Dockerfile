@@ -33,4 +33,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=6 \
     CMD curl -fsS http://localhost:8080/actuator/health | grep -q '"status":"UP"' || exit 1
 
-ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-Djava.awt.headless=true", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "/app/app.jar"]

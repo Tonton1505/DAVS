@@ -154,6 +154,30 @@ public class DashboardService {
         return dashboardRepository.findByWorkbookId(workbookId);
     }
 
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> listHomeDashboards(DavsUser actor) {
+        List<DashboardDto> all = dashboardRepository.listAllActive();
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (DashboardDto d : all) {
+            ResourceRef dRef = new ResourceRef(ResourceType.DASHBOARD, d.id());
+            if (actor != null && permissionService != null && !permissionService.can(actor, Capability.VIEW, dRef)) {
+                continue;
+            }
+            WorkbookDao.WorkbookRow wb = workbookRepository != null
+                    ? workbookRepository.findById(d.workbookId()).orElse(null)
+                    : null;
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("id", d.id().toString());
+            item.put("name", d.name());
+            item.put("project", wb != null && wb.projectName() != null ? wb.projectName() : "Default");
+            item.put("owner", wb != null && wb.ownerName() != null ? wb.ownerName() : "Hệ thống");
+            item.put("updated", d.updatedAt() != null ? d.updatedAt().toString().substring(0, 10) : "Hôm nay");
+            item.put("favorite", false);
+            items.add(item);
+        }
+        return items;
+    }
+
     @Transactional
     public DashboardDto create(CreateDashboardRequest request, DavsUser actor) {
         UUID wbId = request.workbookId();
@@ -180,7 +204,7 @@ public class DashboardService {
         return created;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public DashboardViewDto getDashboardView(UUID dashboardId, DavsUser actor) {
         DashboardDto dashboard = dashboardRepository.findById(dashboardId)
                 .or(() -> vizRepository.findDashboardById(dashboardId))

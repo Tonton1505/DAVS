@@ -1,12 +1,5 @@
 package vn.edu.davs.backend.service;
 
-import vn.edu.davs.backend.config.StorageProperties;
-import vn.edu.davs.backend.enu.Bucket;
-import vn.edu.davs.backend.model.StoredObject;
-
-import vn.edu.davs.backend.exception.DavsException;
-import vn.edu.davs.backend.enu.ErrorCode;
-import vn.edu.davs.backend.enu.SettingKey;
 import io.minio.BucketExistsArgs;
 import io.minio.GetObjectArgs;
 import io.minio.GetPresignedObjectUrlArgs;
@@ -18,8 +11,10 @@ import io.minio.StatObjectArgs;
 import io.minio.errors.ErrorResponseException;
 import io.minio.http.Method;
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ConnectException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -31,13 +26,22 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import vn.edu.davs.backend.config.StorageProperties;
+import vn.edu.davs.backend.enu.Bucket;
+import vn.edu.davs.backend.enu.ErrorCode;
+import vn.edu.davs.backend.enu.SettingKey;
+import vn.edu.davs.backend.exception.DavsException;
+import vn.edu.davs.backend.model.StoredObject;
 
 /**
  * MinIO-backed object storage service with auto-bucket provisioning, filename sanitization,
- * magic-bytes verification, optional virus scanning, and size limits from {@link SettingsService} (T-009).
+ * magic-bytes verification, optional virus scanning, size limits from {@link SettingsService},
+ * and automatic cross-platform local filesystem fallback when MinIO is offline in local dev (T-009).
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class StorageService {
@@ -53,7 +57,7 @@ public class StorageService {
     private final Set<Bucket> initializedBuckets = ConcurrentHashMap.newKeySet();
 
     /**
-     * Validates, scans (if enabled), and uploads an object to MinIO.
+     * Validates, scans (if enabled), and uploads an object to MinIO (or local fallback if MinIO is unreachable).
      */
     public StoredObject put(
             Bucket bucket,
@@ -78,22 +82,34 @@ public class StorageService {
                 : contentType;
 
         try {
-            BufferedInputStream buffered = new BufferedInputStream(data, HEADER_PEEK_BYTES * 2);
-            buffered.mark(HEADER_PEEK_BYTES * 2);
-            byte[] header = readHeaderBytes(buffered);
+            byte[] payload = data.readAllBytes();
+            byte[] header = payload.length <= HEADER_PEEK_BYTES
+                    ? payload
+                    : Arrays.copyOf(payload, HEADER_PEEK_BYTES);
             magicBytesValidator.validate(safeFileName, header);
-            buffered.reset();
-
-            ensureBucket(bucket);
-            String objectKey = buildObjectKey(keyPrefix, safeFileName);
 
             if (storageProperties.isVirusScanEnabled()) {
-                uploadWithVirusScan(bucket, objectKey, safeFileName, resolvedContentType, buffered, sizeBytes);
-            } else {
-                uploadStream(bucket, objectKey, resolvedContentType, buffered, sizeBytes);
+                virusScanner.scan(safeFileName, new ByteArrayInputStream(payload));
             }
 
-            return new StoredObject(bucket, objectKey, safeFileName, sizeBytes, resolvedContentType);
+            String objectKey = buildObjectKey(keyPrefix, safeFileName);
+            long actualSize = sizeBytes > 0 ? sizeBytes : payload.length;
+
+            try {
+                ensureBucket(bucket);
+                try (BufferedInputStream uploadStream = new BufferedInputStream(new ByteArrayInputStream(payload))) {
+                    uploadStream(bucket, objectKey, resolvedContentType, uploadStream, actualSize);
+                }
+            } catch (Exception minioEx) {
+                if (!isConnectionFailure(minioEx)) {
+                    throw minioEx;
+                }
+                log.warn("MinIO is unreachable ({}); storing object in local fallback directory: {}",
+                        minioEx.getMessage(), objectKey);
+                writeLocalFallback(bucket, objectKey, payload);
+            }
+
+            return new StoredObject(bucket, objectKey, safeFileName, actualSize, resolvedContentType);
         } catch (DavsException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -102,7 +118,7 @@ public class StorageService {
     }
 
     /**
-     * Opens a stream to read an object from MinIO. Caller must close the returned {@link InputStream}.
+     * Opens a stream to read an object from MinIO (or local fallback). Caller must close the returned {@link InputStream}.
      */
     public InputStream get(Bucket bucket, String objectKey) {
         Objects.requireNonNull(bucket, "bucket must not be null");
@@ -115,12 +131,20 @@ public class StorageService {
                             .build()
             );
         } catch (Exception ex) {
+            Path localPath = resolveLocalFallbackPath(bucket, objectKey);
+            if (Files.isRegularFile(localPath)) {
+                try {
+                    return Files.newInputStream(localPath);
+                } catch (IOException ioEx) {
+                    throw new IllegalStateException("Failed to read local fallback object: " + objectKey, ioEx);
+                }
+            }
             throw new IllegalStateException("Failed to read object from MinIO: " + objectKey, ex);
         }
     }
 
     /**
-     * Deletes an object from MinIO.
+     * Deletes an object from MinIO (and local fallback if present).
      */
     public void delete(Bucket bucket, String objectKey) {
         Objects.requireNonNull(bucket, "bucket must not be null");
@@ -133,12 +157,20 @@ public class StorageService {
                             .build()
             );
         } catch (Exception ex) {
-            throw new IllegalStateException("Failed to delete object from MinIO: " + objectKey, ex);
+            if (!isConnectionFailure(ex)) {
+                throw new IllegalStateException("Failed to delete object from MinIO: " + objectKey, ex);
+            }
+        } finally {
+            try {
+                Files.deleteIfExists(resolveLocalFallbackPath(bucket, objectKey));
+            } catch (IOException ignored) {
+                // Ignore local cleanup error
+            }
         }
     }
 
     /**
-     * Checks whether an object exists in MinIO.
+     * Checks whether an object exists in MinIO (or local fallback).
      */
     public boolean exists(Bucket bucket, String objectKey) {
         Objects.requireNonNull(bucket, "bucket must not be null");
@@ -154,10 +186,13 @@ public class StorageService {
         } catch (ErrorResponseException ex) {
             String code = ex.errorResponse() != null ? ex.errorResponse().code() : "";
             if ("NoSuchKey".equals(code) || "NoSuchBucket".equals(code)) {
-                return false;
+                return Files.isRegularFile(resolveLocalFallbackPath(bucket, objectKey));
             }
             throw new IllegalStateException("Failed to stat object in MinIO: " + objectKey, ex);
         } catch (Exception ex) {
+            if (isConnectionFailure(ex)) {
+                return Files.isRegularFile(resolveLocalFallbackPath(bucket, objectKey));
+            }
             throw new IllegalStateException("Failed to stat object in MinIO: " + objectKey, ex);
         }
     }
@@ -183,29 +218,6 @@ public class StorageService {
             );
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to generate presigned URL for: " + objectKey, ex);
-        }
-    }
-
-    private void uploadWithVirusScan(
-            Bucket bucket,
-            String objectKey,
-            String safeFileName,
-            String contentType,
-            InputStream stream,
-            long sizeBytes
-    ) throws Exception {
-        Path tempFile = Files.createTempFile("davs-upload-", "-" + safeFileName);
-        try {
-            Files.copy(stream, tempFile, StandardCopyOption.REPLACE_EXISTING);
-            try (InputStream scanStream = Files.newInputStream(tempFile)) {
-                virusScanner.scan(safeFileName, scanStream);
-            }
-            long actualSize = sizeBytes > 0 ? sizeBytes : Files.size(tempFile);
-            try (InputStream uploadStream = Files.newInputStream(tempFile)) {
-                uploadStream(bucket, objectKey, contentType, uploadStream, actualSize);
-            }
-        } finally {
-            Files.deleteIfExists(tempFile);
         }
     }
 
@@ -246,17 +258,42 @@ public class StorageService {
         return prefix.trim() + bucket.getBucketName();
     }
 
-    private static byte[] readHeaderBytes(BufferedInputStream stream) throws IOException {
-        byte[] buffer = new byte[HEADER_PEEK_BYTES];
-        int totalRead = 0;
-        while (totalRead < HEADER_PEEK_BYTES) {
-            int read = stream.read(buffer, totalRead, HEADER_PEEK_BYTES - totalRead);
-            if (read < 0) {
-                break;
-            }
-            totalRead += read;
+    private Path resolveLocalFallbackPath(Bucket bucket, String objectKey) {
+        Path baseDir = Path.of(System.getProperty("java.io.tmpdir"), "davs-local-storage", resolveBucketName(bucket))
+                .toAbsolutePath()
+                .normalize();
+        String safeRelative = objectKey.replace("\\", "/").replace("..", "").replaceAll("^/+", "");
+        Path resolved = baseDir.resolve(safeRelative).normalize();
+        if (!resolved.startsWith(baseDir)) {
+            throw new DavsException(ErrorCode.ERR_PRJ_08);
         }
-        return totalRead == buffer.length ? buffer : Arrays.copyOf(buffer, totalRead);
+        return resolved;
+    }
+
+    private void writeLocalFallback(Bucket bucket, String objectKey, byte[] payload) throws IOException {
+        Path target = resolveLocalFallbackPath(bucket, objectKey);
+        Path parent = target.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+        Path temp = Files.createTempFile(parent != null ? parent : target.getRoot(), "davs-", ".tmp");
+        try {
+            Files.write(temp, payload);
+            Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
+        } finally {
+            Files.deleteIfExists(temp);
+        }
+    }
+
+    private static boolean isConnectionFailure(Throwable throwable) {
+        Throwable cur = throwable;
+        while (cur != null) {
+            if (cur instanceof ConnectException) {
+                return true;
+            }
+            cur = cur.getCause();
+        }
+        return false;
     }
 
     private static String buildObjectKey(String keyPrefix, String safeFileName) {

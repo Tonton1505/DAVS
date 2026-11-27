@@ -37,7 +37,7 @@ public class WorkbookEntity {
     @Column(name = "name", nullable = false, length = 255)
     private String name;
 
-    @Column(name = "description", length = 500)
+    @Column(name = "description", columnDefinition = "text")
     private String description;
 
     @Column(name = "current_version", nullable = false)

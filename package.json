@@ -2,12 +2,17 @@
   "name": "davs-workspace",
   "private": true,
   "scripts": {
-    "dev": "npm --prefix frontend-react run dev",
-    "start": "npm --prefix frontend-react run dev",
-    "build": "npm --prefix frontend-react run build",
-    "test": "npm --prefix frontend-react test",
-    "typecheck": "npm --prefix frontend-react run typecheck",
-    "lint": "npm --prefix frontend-react run lint"
+    "dev": "node scripts/run-frontend.mjs dev",
+    "start": "node scripts/run-frontend.mjs dev",
+    "build": "node scripts/run-frontend.mjs build",
+    "test": "node scripts/run-frontend.mjs test -- --run",
+    "typecheck": "node scripts/run-frontend.mjs typecheck",
+    "lint": "node scripts/run-frontend.mjs lint",
+    "ensure:frontend": "node scripts/run-frontend.mjs ensure-deps",
+    "backend": "mvn -f backend-springboot spring-boot:run",
+    "test:backend": "mvn -f backend-springboot test -Dtest=\"!*IntegrationTest*,!DavsApplicationTests\"",
+    "docker:up": "docker compose -f infra/docker-compose.yml up -d --build",
+    "docker:down": "docker compose -f infra/docker-compose.yml down"
   },
   "dependencies": {
     "@neon/config": "^1.14.3",

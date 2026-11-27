@@ -79,6 +79,20 @@ public class HibernateDashboardDao implements DashboardDao {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<DashboardDto> listAllActive() {
+        return session()
+                .createSelectionQuery(
+                        "FROM DashboardEntity d WHERE d.deletedAt IS NULL ORDER BY d.updatedAt DESC",
+                        DashboardEntity.class
+                )
+                .getResultList()
+                .stream()
+                .map(HibernateDashboardDao::toDto)
+                .toList();
+    }
+
+    @Override
     public DashboardDto create(
             UUID workbookId,
             String name,

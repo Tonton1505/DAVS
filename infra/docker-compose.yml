@@ -69,7 +69,7 @@ services:
       - davs-net
 
   mailhog:
-    image: mailhog/mailhog:v1.0.1
+    image: axllent/mailpit:v1.21
     container_name: davs-mailhog
     restart: unless-stopped
     ports:
