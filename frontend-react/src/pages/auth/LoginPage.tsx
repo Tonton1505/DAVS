@@ -417,37 +417,6 @@ export default function LoginPage() {
           >
             Đăng nhập bằng tài khoản Admin
           </Button>
-          {(window.location.hostname === "localhost" ||
-            window.location.hostname === "127.0.0.1") && (
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-              <a
-                href="http://localhost:9001"
-                target="_blank"
-                rel="noreferrer"
-                title="Copy user/pass và mở MinIO Console"
-                className="rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-muted"
-                onClick={() => {
-                  navigator.clipboard?.writeText(
-                    "davs_minio_admin / davs_minio_secret_change_me",
-                  );
-                }}
-              >
-                MinIO
-              </a>
-              <button
-                type="button"
-                title="Copy chuỗi kết nối PostgreSQL"
-                className="rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-muted"
-                onClick={() => {
-                  navigator.clipboard?.writeText(
-                    "postgresql://davs:davs_secret_password_change_me@localhost:5432/davs",
-                  );
-                }}
-              >
-                PostgreSQL
-              </button>
-            </div>
-          )}
         </div>
       </Card>
     </div>
